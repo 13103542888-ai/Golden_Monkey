@@ -382,4 +382,6 @@ def ask(req: AskReq):
 
 # ───────── 启动 ─────────
 if __name__ == "__main__":
-    uvicorn.run(app, host="127.0.0.1", port=6000, log_level="info")
+    # 如果在云端运行就用云端分配的端口，如果在本地运行默认用 8000
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port, log_level="info")
