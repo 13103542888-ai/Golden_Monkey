@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: golden-monkey-api
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python auth_server.py
+    envVars:
+      - key: JWT_SECRET
+        generateValue: true
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: SMTP_FROM_NAME
+        sync: false
+    plan: free

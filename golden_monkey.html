@@ -1,0 +1,2139 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>金丝猴智能平台 · 第13次迭代</title>
+<style>
+        :root {
+            --gold: #e2b96f;
+            --gold-dim: rgba(226, 185, 111, 0.25);
+            --emerald: #3ec9a0;
+            --emerald-dim: rgba(62, 201, 160, 0.15);
+            --bg-deep: #3a6b50;
+            --bg-card: rgba(58, 107, 80, 0.30);
+            --text-primary: #fbfdfb;
+            --text-secondary: #ddf0e4;
+            --border-subtle: rgba(255,255,255,0.22);
+            --border-glow: rgba(226, 185, 111, 0.5);
+            --radius: 20px;
+            --radius-sm: 12px;
+        }
+
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+            background: var(--bg-deep);
+            color: var(--text-primary);
+            line-height: 1.7;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        /* 全屏背景层 */
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 80% 60% at 20% 10%, rgba(62, 201, 160, 0.45), transparent),
+                radial-gradient(ellipse 70% 50% at 80% 90%, rgba(226, 185, 111, 0.35), transparent);
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        #forest-canvas {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+        }
+
+        .wrap { position: relative; z-index: 1; max-width: 1400px; margin: 0 auto; padding: 0 clamp(16px, 4vw, 40px); }
+
+        /* 顶部导航 */
+        .topbar { position: sticky; top: 0; z-index: 100; padding: 14px 0; transition: background 0.4s; }
+        .topbar.scrolled { background: rgba(58, 107, 80, 0.75); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid var(--border-subtle); }
+        .topbar-inner { max-width: 1400px; margin: 0 auto; padding: 0 clamp(16px, 4vw, 40px); display: flex; align-items: center; justify-content: space-between; }
+        
+        .brand { display: flex; align-items: center; gap: 14px; }
+        .brand-logo { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; border: 2px solid var(--gold); box-shadow: 0 0 20px var(--gold-dim); }
+        .brand-name { font-size: 22px; font-weight: 600; background: linear-gradient(135deg, #fff 30%, var(--gold)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: 1px; }
+        
+        .nav-links { display: flex; gap: 6px; }
+        .nav-link { position: relative; padding: 8px 22px; color: var(--text-secondary); text-decoration: none; font-size: 15px; border-radius: 30px; cursor: pointer; transition: 0.3s; border: 1px solid transparent; user-select: none; }
+        .nav-link:hover, .nav-link.active { color: #fff; background: rgba(255,255,255,0.14); border-color: var(--border-subtle); }
+        .nav-link.active::after { content: ""; position: absolute; bottom: -2px; left: 50%; transform: translateX(-50%); width: 20px; height: 3px; background: var(--gold); border-radius: 2px; }
+        
+        .auth-group { display: flex; gap: 10px; }
+        .btn-ghost { padding: 8px 20px; border-radius: 30px; border: 1px solid var(--border-subtle); background: transparent; color: var(--text-secondary); font-size: 14px; cursor: pointer; transition: 0.3s; }
+        .btn-ghost:hover { color: #fff; border-color: rgba(255,255,255,0.25); }
+        .btn-solid { padding: 8px 22px; border-radius: 30px; border: none; background: linear-gradient(135deg, var(--gold), #c99a3a); color: #111; font-size: 14px; font-weight: 600; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 15px var(--gold-dim); }
+        .btn-solid:hover { transform: translateY(-2px); box-shadow: 0 8px 25px var(--gold-dim); }
+
+        /* 按钮与表单 */
+        .action-btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 28px; border-radius: 30px; border: none; background: linear-gradient(135deg, var(--gold), #c99a3a); color: #111; font-size: 15px; font-weight: 600; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 20px var(--gold-dim); }
+        .action-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(226, 185, 111, 0.35); }
+        .action-btn-outline { display: inline-flex; align-items: center; gap: 8px; padding: 11px 26px; border-radius: 30px; border: 1px solid var(--border-subtle); background: rgba(255,255,255,0.12); color: var(--text-primary); font-size: 15px; cursor: pointer; transition: 0.3s; backdrop-filter: blur(8px); }
+        .action-btn-outline:hover { background: rgba(255,255,255,0.1); border-color: var(--gold); color: var(--gold); }
+        
+        .field { width: 100%; padding: 14px 20px; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle); background: rgba(0,0,0,0.06); color: #fff; font-size: 15px; outline: none; transition: 0.3s; margin-bottom: 16px; }
+        .field:focus { border-color: var(--gold); background: rgba(0,0,0,0.12); box-shadow: 0 0 15px var(--gold-dim); }
+        textarea.field { min-height: 110px; resize: vertical; }
+
+        .section-heading { text-align: center; margin-bottom: 50px; }
+        .section-heading h2 { font-size: 36px; font-weight: 300; color: #fff; margin-bottom: 12px; }
+        .section-heading .line { display: inline-block; width: 50px; height: 2px; background: var(--gold); border-radius: 2px; }
+
+        .page { display: none; }
+        .page.visible { display: block; animation: pageEnter 0.6s ease; }
+        @keyframes pageEnter { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .reveal { opacity: 0; transform: translateY(40px); transition: opacity 0.8s ease, transform 0.8s ease; }
+        .reveal.visible-scroll { opacity: 1; transform: translateY(0); }
+
+        /* 英雄大图区 - 图片防裁剪优化 */
+        .hero { position: relative; height: 600px; margin: 20px 0 0; border-radius: var(--radius); overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.15); }
+        .hero-slides { position: absolute; inset: 0; display: flex; transition: transform 1s cubic-bezier(0.65, 0, 0.35, 1); }
+        .hero-slide { min-width: 100%; height: 100%; object-fit: cover; object-position: center 20%; }
+        
+        .hero-glass { position: absolute; bottom: 0; left: 0; right: 0; height: 55%; background: linear-gradient(to top, rgba(58, 107, 80, 0.60) 10%, transparent); z-index: 2; display: flex; flex-direction: column; justify-content: flex-end; padding: 50px; }
+        .hero-glass h2 { font-size: clamp(32px, 5vw, 48px); font-weight: 300; line-height: 1.3; margin-bottom: 16px; }
+        .hero-glass h2 em { font-style: normal; color: var(--gold); }
+        .hero-glass p { color: var(--text-secondary); font-size: 17px; max-width: 550px; margin-bottom: 28px; }
+        
+        .hero-tags { display: flex; gap: 10px; }
+        .hero-tag { padding: 5px 16px; border-radius: 20px; font-size: 13px; background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.15); color: #fff; }
+        
+        .hero-ctrl { position: absolute; top: 50%; transform: translateY(-50%); width: 48px; height: 48px; border-radius: 50%; background: rgba(0,0,0,0.35); backdrop-filter: blur(8px); color: #fff; font-size: 18px; border: 1px solid rgba(255,255,255,0.15); cursor: pointer; z-index: 5; transition: 0.3s; display: flex; align-items: center; justify-content: center; }
+        .hero-ctrl:hover { background: var(--gold); color: #111; border-color: var(--gold); }
+        .hero-ctrl.prev { left: 20px; } .hero-ctrl.next { right: 20px; }
+        
+        .hero-dots { position: absolute; bottom: 20px; right: 50px; z-index: 5; display: flex; gap: 8px; }
+        .hero-dot { width: 24px; height: 3px; border-radius: 2px; background: rgba(255,255,255,0.3); cursor: pointer; transition: 0.4s; }
+        .hero-dot.active { width: 40px; background: var(--gold); }
+
+        /* 简介双栏区 - 图片防裁剪 */
+        .intro-section { padding: 100px 0 80px; }
+        .intro-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; }
+        .intro-text { font-size: 19px; font-weight: 300; line-height: 2.2; color: #eef8f3; }
+        .intro-text strong { color: var(--gold); font-weight: 500; }
+        .intro-text .stat-row { display: flex; gap: 40px; margin-top: 35px; }
+        .stat-item { text-align: center; }
+        .stat-num { font-size: 38px; font-weight: 200; color: var(--gold); display: block; }
+        .stat-label { font-size: 13px; color: var(--text-secondary); }
+        .intro-img-wrap {
+            position: relative;
+            height: 460px;
+            border-radius: 50% 50% 20px 20px / 50% 50% 10px 10px;
+            overflow: hidden;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.20);
+        }
+        .intro-img-wrap img { width: 100%; height: 100%; object-fit: cover; object-position: center top; transition: transform 0.6s; }
+        .intro-img-wrap:hover img { transform: scale(1.04); }
+        .intro-img-wrap::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            border: 1px solid var(--border-subtle);
+            border-radius: 50% 50% 20px 20px / 50% 50% 10px 10px;
+            pointer-events: none;
+        }
+
+        /* ========= v13 PART 4/4：功能区焦点轮播布局 ========= */
+        .features-section { padding: 40px 0 80px; }
+        .carousel-wrapper { position: relative; overflow: hidden; padding: 40px 0; }
+        .carousel-track {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            height: 420px;
+        }
+        .carousel-item {
+            position: absolute;
+            border-radius: var(--radius);
+            overflow: hidden;
+            cursor: pointer;
+            border: 1px solid var(--border-subtle);
+            background: var(--bg-card);
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        .carousel-item img { width: 100%; height: 100%; object-fit: cover; object-position: center 30%; filter: brightness(0.65); transition: filter 0.6s; }
+        .carousel-item.active img { filter: brightness(0.95); }
+        .carousel-item .feature-card-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to top, rgba(58, 107, 80, 0.50), transparent 60%);
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 28px;
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+        .carousel-item.active .feature-card-overlay { opacity: 1; }
+        .carousel-item .feature-card-overlay .decor-line { width: 24px; height: 2px; background: var(--gold); margin-bottom: 10px; }
+        .carousel-item .feature-card-overlay h3 { font-size: 22px; font-weight: 500; color: #fff; margin-bottom: 8px; letter-spacing: 1px; }
+        .carousel-item .feature-card-overlay p { font-size: 14px; color: var(--text-secondary); line-height: 1.6; }
+        .carousel-item:hover { box-shadow: 0 20px 50px rgba(0,0,0,0.25); }
+        .carousel-item.active { border-color: var(--border-glow); box-shadow: 0 20px 50px rgba(0,0,0,0.25), 0 0 30px var(--gold-dim); }
+
+        .carousel-arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: rgba(0,0,0,0.25);
+            backdrop-filter: blur(8px);
+            color: #fff;
+            font-size: 18px;
+            border: 1px solid rgba(255,255,255,0.15);
+            cursor: pointer;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: 0.3s;
+        }
+        .carousel-arrow:hover { background: var(--gold); color: #111; border-color: var(--gold); }
+        .carousel-arrow.prev { left: 20px; }
+        .carousel-arrow.next { right: 20px; }
+
+        .carousel-dots { display: flex; justify-content: center; gap: 10px; margin-top: 25px; }
+        .carousel-dot { width: 28px; height: 3px; border-radius: 2px; background: rgba(255,255,255,0.2); cursor: pointer; transition: 0.4s; }
+        .carousel-dot.active { width: 44px; background: var(--gold); }
+
+        /* 详情页通用 */
+        .detail-page { display: none; padding: 30px 0 60px; animation: pageEnter 0.6s ease; }
+        .detail-inner { max-width: 920px; margin: 0 auto; }
+        .detail-header { margin-bottom: 40px; }
+        .detail-header h1 { font-size: 38px; font-weight: 300; margin-bottom: 10px; }
+        .detail-header .sub { font-size: 17px; color: var(--gold); }
+        .back-link { display: inline-flex; align-items: center; gap: 8px; color: var(--text-secondary); font-size: 14px; cursor: pointer; margin-bottom: 30px; padding: 8px 18px; border-radius: 30px; border: 1px solid var(--border-subtle); background: transparent; transition: 0.3s; }
+        .back-link:hover { color: #fff; border-color: var(--gold); }
+
+        .result-block { margin-top: 30px; padding: 30px; border-radius: var(--radius); background: var(--bg-card); border: 1px solid var(--border-subtle); backdrop-filter: blur(10px); }
+        .result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; align-items: center; }
+        .result-img { border-radius: var(--radius-sm); overflow: hidden; border: 1px solid var(--border-subtle); }
+        .result-img img { width: 100%; display: block; object-fit: cover; object-position: center top; }
+        .label { color: var(--text-secondary); font-size: 13px; margin-bottom: 4px; display: block; }
+        .value { color: #fff; font-size: 20px; margin-bottom: 18px; display: block; }
+
+        /* AI 知识问答整体面板 */
+        .qa-panel { background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.1); border-radius: var(--radius); padding: 28px; backdrop-filter: blur(18px); }
+        .qa-panel .field { background: rgba(0,0,0,0.3); border-color: rgba(255,255,255,0.15); }
+        .qa-panel .field:focus { border-color: var(--gold); }
+        /* 回答卡片 */
+        #answer-result { margin-top: 24px; border-radius: var(--radius-sm); overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.7), 0 0 0 1px rgba(226,185,111,0.25); }
+        .ai-q-section { padding: 14px 22px; background: rgba(226,185,111,0.08); border-bottom: 1px solid rgba(226,185,111,0.15); display: flex; gap: 10px; align-items: flex-start; }
+        .ai-q-badge { min-width: 24px; height: 24px; background: var(--gold); border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; color: #0a1a0f; flex-shrink: 0; }
+        .ai-q-text { color: rgba(255,255,255,0.65); font-size: 13px; line-height: 1.6; padding-top: 2px; }
+        .ai-a-section { padding: 22px 22px 24px; background: #0d1f15; }
+        .ai-a-header { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+        .ai-a-header-text { color: var(--gold); font-size: 10px; letter-spacing: 3px; text-transform: uppercase; font-weight: 600; }
+        .ai-a-header::after { content: ''; flex: 1; height: 1px; background: linear-gradient(to right, rgba(226,185,111,0.4), transparent); }
+        .ai-answer-text { color: #d4ead9; font-size: 14.5px; line-height: 1.95; font-weight: 300; }
+        .ai-answer-text p { margin: 0 0 12px; }
+        .ai-answer-text p:last-child { margin-bottom: 0; }
+        .ai-answer-text strong { color: #ffffff; font-weight: 600; }
+        .ai-answer-text em { color: var(--gold); font-style: normal; }
+        .ai-answer-text h2, .ai-answer-text h3, .ai-answer-text h4 { color: #fff; font-weight: 500; margin: 16px 0 8px; font-size: 15px; display: flex; align-items: center; gap: 8px; }
+        .ai-answer-text h2::before, .ai-answer-text h3::before, .ai-answer-text h4::before { content: ''; width: 3px; height: 14px; background: var(--gold); border-radius: 2px; flex-shrink: 0; }
+        .ai-answer-text ul { list-style: none; padding: 0; margin: 4px 0 12px; }
+        .ai-answer-text li { padding: 4px 0 4px 18px; position: relative; color: #c8e4cf; font-size: 14px; }
+        .ai-answer-text li::before { content: '▸'; color: var(--gold); position: absolute; left: 0; font-size: 10px; top: 6px; }
+
+        /* 百科与文化页面 */
+        .species-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 24px; }
+        .species-card { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius); overflow: hidden; transition: 0.4s; backdrop-filter: blur(8px); }
+        .species-card:hover { transform: translateY(-6px); border-color: var(--border-glow); box-shadow: 0 15px 40px rgba(0,0,0,0.25); }
+        .species-card img { width: 100%; height: 200px; object-fit: cover; object-position: center 20%; }
+        .species-card-body { padding: 20px; }
+        .species-card-body h3 { font-size: 17px; margin-bottom: 8px; }
+        .species-card-body p { font-size: 14px; color: var(--text-secondary); line-height: 1.6; }
+
+        .enc-section { margin-bottom: 60px; }
+        .enc-section h2 { font-size: 28px; font-weight: 400; color: var(--gold); margin-bottom: 20px; position: relative; padding-left: 18px; }
+        .enc-section h2::before { content: ""; position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: 4px; height: 24px; background: var(--gold); border-radius: 2px; }
+        .enc-section p { font-size: 16px; color: #eaf6f0; text-align: justify; margin-bottom: 16px; line-height: 1.9;}
+        
+        .enc-section h3 { font-size: 20px; font-weight: 400; color: #fff; margin: 30px 0 15px; border-left: 2px solid var(--border-glow); padding-left: 14px; }
+        .enc-list { padding-left: 18px; margin-bottom: 20px; }
+        .enc-list li { margin-bottom: 8px; color: #eaf6f0; }
+
+        /* 视频播放器 */
+        .video-stage { position: relative; width: 100%; height: 420px; border-radius: var(--radius); overflow: hidden; background-size: cover; background-position: center; display: flex; align-items: center; justify-content: center; margin: 20px 0; box-shadow: 0 20px 50px rgba(0,0,0,0.3); border: 1px solid var(--border-subtle); }
+        .video-stage::after { content: ""; position: absolute; inset: 0; background: rgba(0,0,0,0.18); }
+        .play-circle { position: relative; z-index: 2; width: 72px; height: 72px; border-radius: 50%; background: rgba(255,255,255,0.15); backdrop-filter: blur(12px); border: 2px solid rgba(255,255,255,0.4); display: flex; align-items: center; justify-content: center; font-size: 26px; color: #fff; cursor: pointer; transition: 0.3s; }
+        .play-circle:hover { background: var(--gold); border-color: var(--gold); color: #111; transform: scale(1.1); }
+
+        /* v13 PART 2/4：团队页（首字母头像 + 准确信息） */
+        .team-member { display: flex; gap: 24px; padding: 24px; border-radius: var(--radius); background: var(--bg-card); border: 1px solid var(--border-subtle); margin-bottom: 20px; backdrop-filter: blur(8px); transition: 0.3s; }
+        .team-member:hover { border-color: var(--border-glow); }
+        .team-avatar {
+            width: 68px;
+            height: 68px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: 600;
+            color: #fff;
+            letter-spacing: 2px;
+            box-shadow: 0 8px 18px rgba(0,0,0,0.25);
+            border: 2px solid rgba(255,255,255,0.12);
+        }
+        .face-a { background: linear-gradient(135deg, #3ec9a0, #2a9d8f); }
+        .face-b { background: linear-gradient(135deg, #e2b96f, #c99a3a); }
+        .face-c { background: linear-gradient(135deg, #6ea8d7, #4a7fb5); }
+        .team-segment-title { color: var(--gold); font-size: 22px; font-weight: 400; margin: 8px 0 20px; }
+        .team-info h3 { font-size: 18px; margin-bottom: 4px; }
+        .team-info .role { font-size: 14px; color: var(--gold); margin-bottom: 6px; }
+        .team-info .desc { font-size: 14px; color: var(--text-secondary); }
+        .coop-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-top: 16px; }
+        .coop-card { padding: 18px; border-radius: var(--radius-sm); background: var(--bg-card); border: 1px solid var(--border-subtle); backdrop-filter: blur(8px); }
+        .coop-card h4 { font-size: 15px; color: var(--gold); margin-bottom: 10px; font-weight: 400; }
+        .coop-card p { font-size: 14px; color: var(--text-secondary); line-height: 1.8; }
+
+        .site-footer { text-align: center; padding: 50px 0 30px; border-top: 1px solid var(--border-subtle); margin-top: 60px; }
+        .site-footer .footer-brand { font-size: 20px; color: var(--gold); margin-bottom: 10px; font-weight: 300; }
+        .site-footer p { color: var(--text-secondary); font-size: 13px; }
+
+        /* 登录注册弹窗 */
+        .auth-overlay { display: none; position: fixed; inset: 0; z-index: 999; background: rgba(0,0,0,0.55); backdrop-filter: blur(6px); align-items: center; justify-content: center; }
+        .auth-overlay.show { display: flex; animation: pageEnter 0.35s ease; }
+        .auth-modal { width: 400px; max-width: 92vw; background: linear-gradient(160deg, rgba(42, 82, 62, 0.95), rgba(28, 56, 42, 0.98)); border: 1px solid var(--border-subtle); border-radius: var(--radius); padding: 40px 36px 32px; position: relative; box-shadow: 0 30px 80px rgba(0,0,0,0.5); }
+        .auth-modal h2 { font-size: 26px; font-weight: 400; text-align: center; margin-bottom: 8px; }
+        .auth-modal .modal-sub { text-align: center; color: var(--text-secondary); font-size: 14px; margin-bottom: 28px; }
+        .auth-modal .field { margin-bottom: 14px; }
+        .auth-modal .action-btn { width: 100%; justify-content: center; margin-top: 6px; }
+        .auth-modal .switch-text { text-align: center; margin-top: 18px; font-size: 14px; color: var(--text-secondary); }
+        .auth-modal .switch-text a { color: var(--gold); cursor: pointer; text-decoration: none; }
+        .auth-modal .switch-text a:hover { text-decoration: underline; }
+        .auth-close { position: absolute; top: 14px; right: 18px; width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--border-subtle); background: transparent; color: var(--text-secondary); font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.3s; }
+        .auth-close:hover { color: #fff; border-color: var(--gold); }
+        .auth-msg { text-align: center; font-size: 13px; margin-top: 12px; min-height: 20px; }
+        .auth-msg.err { color: #f87171; }
+        .auth-msg.ok { color: var(--emerald); }
+        .auth-user-info { display: flex; align-items: center; gap: 10px; }
+        .auth-user-info .user-badge { padding: 6px 16px; border-radius: 20px; background: var(--bg-card); border: 1px solid var(--border-subtle); color: var(--text-primary); font-size: 14px; backdrop-filter: blur(8px); }
+        .auth-user-info .btn-ghost { font-size: 13px; padding: 6px 14px; }
+        /* 验证码发送行 */
+        .code-row { display: flex; gap: 8px; margin-bottom: 14px; }
+        .code-row .field { flex: 1; margin-bottom: 0; }
+        .send-code-btn { white-space: nowrap; padding: 0 16px; height: 46px; border: 1px solid var(--gold); border-radius: 8px; background: transparent; color: var(--gold); font-size: 13px; cursor: pointer; transition: 0.3s; min-width: 110px; }
+        .send-code-btn:hover:not(:disabled) { background: rgba(212,175,55,0.15); }
+        .send-code-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+        /* 密码强度 */
+        .pwd-strength-wrap { margin: -6px 0 10px; }
+        .pwd-strength { height: 4px; border-radius: 2px; background: rgba(255,255,255,0.1); overflow: hidden; }
+        .pwd-strength-bar { height: 100%; width: 0; border-radius: 2px; transition: width 0.3s, background 0.3s; }
+        .pwd-strength-text { font-size: 12px; text-align: right; margin-top: 4px; min-height: 16px; }
+        /* 拼图验证弹窗 */
+        .puzzle-popup { display: none; position: fixed; inset: 0; z-index: 1100; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; }
+        .puzzle-popup.show { display: flex; animation: pageEnter 0.25s ease; }
+        .puzzle-box { width: 320px; background: linear-gradient(160deg, rgba(42,82,62,0.97), rgba(28,56,42,0.99)); border: 1px solid var(--border-subtle); border-radius: var(--radius); padding: 20px; position: relative; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+        .puzzle-box-title { text-align: center; font-size: 15px; margin-bottom: 12px; color: var(--text-secondary); }
+        .puzzle-canvas-wrap { position: relative; width: 280px; height: 170px; border-radius: 8px; overflow: hidden; background: #1a3328; margin: 0 auto; }
+        .puzzle-canvas-wrap canvas { display: block; }
+        #puzzle-bg { width: 280px; height: 170px; }
+        #puzzle-piece { position: absolute; top: 0; left: 0; width: 280px; height: 170px; pointer-events: none; }
+        .puzzle-reload { position: absolute; top: 6px; right: 6px; width: 26px; height: 26px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.3); background: rgba(0,0,0,0.4); color: #fff; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 5; transition: 0.3s; }
+        .puzzle-reload:hover { background: rgba(0,0,0,0.7); border-color: var(--gold); }
+        .puzzle-slider-bar { position: relative; width: 280px; height: 38px; border-radius: 19px; background: rgba(255,255,255,0.08); border: 1px solid var(--border-subtle); margin: 10px auto 0; user-select: none; overflow: visible; }
+        .puzzle-slider-text { position: absolute; width: 100%; text-align: center; line-height: 38px; font-size: 13px; color: var(--text-secondary); pointer-events: none; transition: 0.3s; }
+        .puzzle-slider-fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0; border-radius: 19px 0 0 19px; background: linear-gradient(90deg, var(--emerald), var(--gold)); }
+        .puzzle-slider-thumb { position: absolute; left: 0; top: -1px; width: 40px; height: 40px; border-radius: 20px; background: linear-gradient(135deg,#fff,#e0e0e0); box-shadow: 0 2px 8px rgba(0,0,0,0.3); cursor: grab; display: flex; align-items: center; justify-content: center; font-size: 14px; color: #555; z-index: 2; }
+        .puzzle-slider-thumb:active { cursor: grabbing; }
+        .puzzle-result-text { text-align: center; font-size: 13px; margin-top: 8px; min-height: 18px; }
+        .puzzle-close { position: absolute; top: 10px; right: 14px; width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--border-subtle); background: transparent; color: var(--text-secondary); font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .puzzle-close:hover { color: #fff; border-color: var(--gold); }
+        .reg-field-wrap { margin-bottom: 14px; }
+        .reg-field-wrap .field { margin-bottom: 0; }
+
+        @media (max-width: 1024px) {
+            .carousel-track { height: 360px; }
+        }
+        @media (max-width: 768px) {
+            .intro-grid { grid-template-columns: 1fr; }
+            .carousel-track { height: 300px; }
+            .result-grid { grid-template-columns: 1fr; }
+            .hero { height: 420px; }
+            .hero-glass { padding: 30px; }
+            .topbar-inner { flex-wrap: wrap; gap: 10px; }
+            .nav-links { order: 3; width: 100%; justify-content: center; }
+            .coop-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- v12 PART 5/5：动态森林背景（落叶、萤火虫、远景猴影） -->
+<canvas id="forest-canvas"></canvas>
+
+<!-- 固定顶栏 -->
+<nav class="topbar" id="topbar">
+    <div class="topbar-inner">
+        <div class="brand">
+            <img src="https://i.postimg.cc/fbGZFwf9/dc8d9da80923fc8bba994ba3e8e7ee41.jpg" alt="Logo" class="brand-logo">
+            <span class="brand-name">金丝猴智能平台</span>
+        </div>
+        <div class="nav-links">
+            <a class="nav-link active" onclick="showPage('main')">探索首页</a>
+            <a class="nav-link" onclick="showPage('encyclopedia')">物种图鉴</a>
+            <a class="nav-link" onclick="showPage('team')">研究团队</a>
+            <a class="nav-link" onclick="showPage('culture')">人文脉络</a>
+        </div>
+        <div class="auth-group" id="auth-group">
+            <button class="btn-ghost" onclick="openAuthModal('register')">注册</button>
+            <button class="btn-solid" onclick="openAuthModal('login')">登录</button>
+        </div>
+    </div>
+</nav>
+
+<!-- 拼图人机验证弹窗 -->
+<div class="puzzle-popup" id="puzzle-popup" onclick="if(event.target===this)closePuzzle()">
+    <div class="puzzle-box">
+        <button class="puzzle-close" onclick="closePuzzle()">&times;</button>
+        <div class="puzzle-box-title">请完成安全验证</div>
+        <div class="puzzle-canvas-wrap">
+            <canvas id="puzzle-bg" width="280" height="170"></canvas>
+            <canvas id="puzzle-piece" width="280" height="170"></canvas>
+            <button class="puzzle-reload" onclick="genPuzzle()" title="换一张">↻</button>
+        </div>
+        <div class="puzzle-slider-bar" id="puzzle-bar">
+            <div class="puzzle-slider-text" id="puzzle-text">拖动滑块完成拼图</div>
+            <div class="puzzle-slider-fill" id="puzzle-fill"></div>
+            <div class="puzzle-slider-thumb" id="puzzle-thumb">▶</div>
+        </div>
+        <div class="puzzle-result-text" id="puzzle-result"></div>
+    </div>
+</div>
+
+<!-- 登录/注册弹窗 -->
+<div class="auth-overlay" id="auth-overlay" onclick="if(event.target===this)closeAuthModal()">
+    <div class="auth-modal">
+        <button class="auth-close" onclick="closeAuthModal()">&times;</button>
+        <h2 id="auth-title">登录</h2>
+        <p class="modal-sub" id="auth-sub">欢迎回到金丝猴智能平台</p>
+        <input type="text" class="field" id="auth-username" placeholder="用户名" maxlength="20">
+        <!-- 注册专属字段 -->
+        <div class="reg-field-wrap" id="auth-email-wrap" style="display:none">
+            <input type="email" class="field" id="auth-email" placeholder="邮箱地址" maxlength="100">
+        </div>
+        <div id="auth-code-wrap" style="display:none">
+            <div class="code-row">
+                <input type="text" class="field" id="auth-code" placeholder="6位验证码" maxlength="6">
+                <button class="send-code-btn" id="send-code-btn" onclick="onClickSendCode()">发送验证码</button>
+            </div>
+        </div>
+        <input type="password" class="field" id="auth-password" placeholder="密码" maxlength="64" oninput="checkPwdStrength()">
+        <div class="pwd-strength-wrap" id="auth-pwd-strength" style="display:none">
+            <div class="pwd-strength"><div class="pwd-strength-bar" id="pwd-bar"></div></div>
+            <div class="pwd-strength-text" id="pwd-text"></div>
+        </div>
+        <input type="password" class="field" id="auth-password2" placeholder="确认密码" maxlength="64" style="display:none">
+        <button class="action-btn" id="auth-submit" onclick="submitAuth()">登录</button>
+        <div class="auth-msg" id="auth-msg"></div>
+        <div class="switch-text" id="auth-switch">
+            还没有账号？<a onclick="switchAuthMode()">去注册</a>
+        </div>
+    </div>
+</div>
+
+<!-- ===== PART 1/5：主页面结构与功能卡片 ===== -->
+<div id="main-page" class="page visible">
+    <div class="wrap">
+
+        <!-- 英雄区 - 已恢复v8图片的四个原始形态，并添加防裁剪 -->
+        <section class="hero reveal">
+            <div class="hero-slides" id="hero-slides">
+                <img src="https://i.postimg.cc/KYM44p94/666c4e93a34d31b7ff5d0cee26545b77.jpg" class="hero-slide">
+                <img src="https://i.postimg.cc/J4znjzTQ/8bc5ab7cd24104de427ced086a841f35.jpg" class="hero-slide">
+                <img src="https://i.postimg.cc/WzWs509B/ed477b043f6cc2684196977c2d162131.jpg" class="hero-slide">
+                <img src="https://i.postimg.cc/Fs69cgkJ/3e83df46c57e3322db2589d4dc1e9b83.jpg" class="hero-slide">
+            </div>
+            <div class="hero-glass">
+                <h2>穿越秦岭群巅<br>解码<em>金色生灵</em>的社会密语</h2>
+                <p>深度融合生态学监测与神经网络算法，在多维联动的数字沙盘中解构金丝猴的群体演化与行为谱系。</p>
+                <div class="hero-tags">
+                    <span class="hero-tag">行为谱系学</span>
+                    <span class="hero-tag">个体微表情</span>
+                    <span class="hero-tag">数字原境沙盘</span>
+                    <span class="hero-tag">生境可视化</span>
+                </div>
+            </div>
+            <button class="hero-ctrl prev" onclick="prevSlide()">&#10094;</button>
+            <button class="hero-ctrl next" onclick="nextSlide()">&#10095;</button>
+            <div class="hero-dots" id="hero-dots">
+                <div class="hero-dot active" onclick="goSlide(0)"></div>
+                <div class="hero-dot" onclick="goSlide(1)"></div>
+                <div class="hero-dot" onclick="goSlide(2)"></div>
+                <div class="hero-dot" onclick="goSlide(3)"></div>
+            </div>
+        </section>
+
+        <!-- ===== PART 2/5：中部半圆图片（沿用v9造型） ===== -->
+        <section class="intro-section">
+            <div class="intro-grid">
+                <div class="intro-text reveal">
+                    滇川相依的密林高坡间，隐居着灵长类中最独特的物种之一：<strong>仰鼻猴属</strong>。<br><br>
+                    它们拥有精妙的社交法则与丰富的情感信号层，每一次蹙眉、每一声长啸，皆是生命演化中的<strong>自然密电</strong>。<br><br>
+                    借由数字孪生范式，我们在全息生境中对其面部动力学（FAU）进行精准解析，<br>
+                    为物种多样性研究构建<strong>深层感知介质</strong>。
+                    <div class="stat-row">
+                        <div class="stat-item"><span class="stat-num" id="counter1">14</span><span class="stat-label">组独立面部肌肉单元</span></div>
+                        <div class="stat-item"><span class="stat-num" id="counter2">94.7</span><span class="stat-label">% 表达识别准确度</span></div>
+                        <div class="stat-item"><span class="stat-num" id="counter3">5</span><span class="stat-label">大全球濒危亚种全覆盖</span></div>
+                    </div>
+                </div>
+                <div class="intro-img-wrap reveal">
+                    <img src="https://s3.bmp.ovh/imgs/2025/11/22/be8407435bb9a982.jpg" alt="金丝猴特写">
+                </div>
+            </div>
+        </section>
+
+        <!-- v13 PART 4/4：功能区焦点轮播 -->
+        <section class="features-section">
+            <div class="section-heading reveal">
+                <h2>互动功能区</h2>
+                <span class="line"></span>
+            </div>
+            <div class="carousel-wrapper">
+                <div class="carousel-track" id="feature-carousel">
+                    <div class="carousel-item" data-feature="emotion-analysis">
+                        <img src="https://s3.bmp.ovh/imgs/2025/11/02/ab4d7a43a5e25960.jpg">
+                        <div class="feature-card-overlay">
+                            <div class="decor-line"></div>
+                            <h3>情绪分析</h3>
+                            <p>上传照片后，系统会识别金丝猴当前情绪并给出可信度。</p>
+                        </div>
+                    </div>
+                    <div class="carousel-item" data-feature="image-generation">
+                        <img src="https://s3.bmp.ovh/imgs/2025/11/22/f3b362fe81ae12d5.jpg">
+                        <div class="feature-card-overlay">
+                            <div class="decor-line"></div>
+                            <h3>创意图生成</h3>
+                            <p>输入文字描述，一键生成你想要的金丝猴生态场景图。</p>
+                        </div>
+                    </div>
+                    <div class="carousel-item" data-feature="video-science">
+                        <img src="https://s3.bmp.ovh/imgs/2025/11/02/a328212af6e09066.jpg">
+                        <div class="feature-card-overlay">
+                            <div class="decor-line"></div>
+                            <h3>视频科普</h3>
+                            <p>选择主题后自动生成科普视频，快速了解金丝猴行为。</p>
+                        </div>
+                    </div>
+                    <div class="carousel-item" data-feature="knowledge-quiz">
+                        <img src="https://s3.bmp.ovh/imgs/2025/11/02/a9a9dedbbadbc16a.jpg">
+                        <div class="feature-card-overlay">
+                            <div class="decor-line"></div>
+                            <h3>知识百宝库</h3>
+                            <p>通过互动题目测试你对金丝猴行为与表情的理解程度。</p>
+                        </div>
+                    </div>
+                    <div class="carousel-item" data-feature="knowledge-base">
+                        <img src="https://s3.bmp.ovh/imgs/2025/11/02/fb169cb4a0f58ceb.jpg">
+                        <div class="feature-card-overlay">
+                            <div class="decor-line"></div>
+                            <h3>知识问答</h3>
+                            <p>输入问题即可获得通俗解释，适合课堂与科普活动使用。</p>
+                        </div>
+                    </div>
+                </div>
+                <button class="carousel-arrow prev" onclick="featureCarouselPrev()">&#10094;</button>
+                <button class="carousel-arrow next" onclick="featureCarouselNext()">&#10095;</button>
+                <div class="carousel-dots" id="feature-dots"></div>
+            </div>
+        </section>
+
+        <footer class="site-footer">
+            <div class="footer-brand">金丝猴智能平台</div>
+            <p>融合行为学研究与人工智能技术，探索金丝猴的情感世界</p>
+        </footer>
+    </div>
+</div>
+
+<!-- 情绪分析页 -->
+<div id="emotion-analysis-page" class="detail-page">
+    <div class="wrap">
+        <div class="detail-inner">
+            <button class="back-link" onclick="showPage('main')">← 返回首页</button>
+            <div class="detail-header">
+                <h1>情绪分析</h1>
+                <p class="sub">上传金丝猴图片，AI 自动识别其当前情绪状态</p>
+            </div>
+
+            <div style="margin-bottom:12px;">
+                <label style="display:block; margin-bottom:8px; font-size:14px; color:var(--text-secondary);">选择金丝猴图片或视频</label>
+                <input type="file" id="monkey-media" accept="image/*,video/*" multiple class="field" style="margin-bottom:6px;" onchange="onEmotionMediaChange()">
+                <span id="image-file-hint" style="font-size:13px; color:var(--text-secondary);">未选择文件</span>
+            </div>
+            <div id="image-preview-grid" style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px;"></div>
+            <button class="action-btn" onclick="analyzeEmotion()">开始分析</button>
+            <div id="emotion-status" style="margin-top:14px; font-size:14px; color:var(--text-secondary);"></div>
+
+            <div class="result-block" id="emotion-result" style="display:none;">
+                <div class="result-grid">
+                    <div class="result-img">
+                        <img src="https://s3.bmp.ovh/imgs/2025/11/02/ab4d7a43a5e25960.jpg" alt="分析结果" id="emotion-preview">
+                    </div>
+                    <div>
+                        <span class="label">识别结果</span>
+                        <span class="value" id="detected-emotion" style="color:var(--gold); font-size:30px;">平静闲适</span>
+
+                        <span class="label">模型置信度</span>
+                        <div style="margin-bottom:18px;">
+                            <div style="background:rgba(255,255,255,0.08); border-radius:6px; height:8px; overflow:hidden;">
+                                <div id="confidence-bar" style="width:94%; height:100%; background:linear-gradient(90deg, var(--emerald), var(--gold)); border-radius:6px; transition:width 0.8s;"></div>
+                            </div>
+                            <span style="font-size:13px; color:var(--text-secondary);" id="confidence-level">94.0%</span>
+                        </div>
+
+                        <span class="label">行为判断</span>
+                        <span class="value" id="behavior-prediction" style="font-size:15px; font-weight:300; line-height:1.7;">眼距拉近、唇线舒展，提示安全阀域值较高，极可能正释放理毛邀请信号。</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 灵境画面生成页 -->
+<div id="image-generation-page" class="detail-page">
+    <div class="wrap">
+        <div class="detail-inner">
+            <button class="back-link" onclick="showPage('main')">← 返回首页</button>
+            <div class="detail-header">
+                <h1>创意图生成</h1>
+                <p class="sub">输入一句描述，生成对应的金丝猴场景图</p>
+            </div>
+
+            <textarea id="prompt-input" class="field" placeholder="用中文或英文描述画面场景，例如：海拔3000米、云杉林树冠层、晨雾渐起时幼猴在母猴背上的凝视"></textarea>
+            <button class="action-btn" onclick="generateImage()">生成图片</button>
+            <div id="image-status" style="margin-top:14px; font-size:14px; color:var(--text-secondary);"></div>
+
+            <div class="result-block" id="image-result" style="display:none; text-align:center;">
+                <div class="result-img" style="margin-bottom:20px;">
+                    <img id="generated-img" src="" alt="生成图片" style="max-width:100%; border-radius:12px;">
+                </div>
+                <span class="label">你的输入内容：</span>
+                <span class="value" id="image-description" style="font-size:15px; max-width:600px; margin:0 auto 20px;"></span>
+                <div style="display:flex; justify-content:center; gap:12px; margin-top:16px;">
+                    <button class="action-btn" onclick="downloadGeneratedImg()">保存图片</button>
+                    <button class="action-btn-outline" onclick="generateImage()">重新生成</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 全息影像页 -->
+<div id="video-science-page" class="detail-page">
+    <div class="wrap">
+        <div class="detail-inner">
+            <button class="back-link" onclick="showPage('main')">← 返回首页</button>
+            <div class="detail-header">
+                <h1>视频科普</h1>
+                <p class="sub">金丝猴野外行为实录影像</p>
+            </div>
+
+            <div style="position:relative; width:100%; border-radius:12px; overflow:hidden; background:#000;">
+                <img src="/proxy/cover/1" style="width:100%; aspect-ratio:16/9; object-fit:cover; display:block;">
+                <div style="position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:rgba(0,0,0,0.35);">
+                    <div style="width:64px; height:64px; border-radius:50%; background:rgba(255,255,255,0.15); border:2px solid rgba(255,255,255,0.6); display:flex; align-items:center; justify-content:center;">
+                        <svg width="26" height="26" viewBox="0 0 24 24" fill="rgba(255,255,255,0.85)"><polygon points="7,4 20,12 7,20"/></svg>
+                    </div>
+                    <span style="color:#fff; margin-top:12px; font-size:15px; letter-spacing:1px;">群落内个体的静息行为观察</span>
+                </div>
+            </div>
+            <div style="display:flex; justify-content:center; gap:12px; margin-top:15px;">
+                <a class="action-btn" href="/proxy/video/1" download="金丝猴视频.mp4" style="text-decoration:none;">下载视频</a>
+            </div>
+            <div style="text-align:center; margin-top:14px; font-size:14px; color:var(--text-secondary);">ℹ️ 视频需下载后用本地播放器播放</div>
+        </div>
+    </div>
+</div>
+
+<!-- 知识智库页 -->
+<div id="knowledge-base-page" class="detail-page">
+    <div class="wrap">
+        <div class="detail-inner">
+            <button class="back-link" onclick="showPage('main')">← 返回首页</button>
+            <div class="detail-header">
+                <h1>知识问答</h1>
+                <p class="sub">输入问题，快速获得简明解释</p>
+            </div>
+
+            <div class="qa-panel">
+                <textarea id="question-input" class="field" placeholder="提出专业化提问，例如：为什么黔金丝猴的面部区域与其他亚种在色素沉淀上有明显分化现象？"></textarea>
+                <button class="action-btn" id="ask-btn" onclick="getAnswer()">获取回答</button>
+
+                <div id="answer-result" style="display:none;">
+                    <div class="ai-q-section">
+                        <div class="ai-q-badge">Q</div>
+                        <div class="ai-q-text" id="question-text"></div>
+                    </div>
+                    <div class="ai-a-section">
+                        <div class="ai-a-header"><span class="ai-a-header-text">✦ AI 专家解析</span></div>
+                        <div class="ai-answer-text" id="answer-text"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 行为学测验页 -->
+<div id="knowledge-quiz-page" class="detail-page">
+    <div class="wrap">
+        <div class="detail-inner">
+            <button class="back-link" onclick="showPage('main')">← 返回首页</button>
+            <div class="detail-header">
+                <h1>知识百宝库</h1>
+                <p class="sub">看看你对金丝猴行为和表情了解多少</p>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                <span id="quiz-progress" style="font-size:14px; color:var(--text-secondary);">第 1 题 / 共 6 题</span>
+                <div style="display:flex; gap:7px;" id="quiz-dots"></div>
+            </div>
+
+            <div style="margin:0 0 20px 0;">
+                <img id="quiz-img" src="https://s3.bmp.ovh/imgs/2025/11/02/3437af694578b40a.jpg" alt="" style="width:100%; border-radius:12px; display:block;">
+            </div>
+
+            <h3 id="quiz-question" style="color:var(--gold); font-weight:300; margin-bottom:18px; font-size:18px;">通过面部肌肉牵引，这只个体的核心情绪偏向于：</h3>
+
+            <div style="display:flex; gap:10px; flex-wrap:wrap;" id="quiz-options">
+                <button class="action-btn-outline" onclick="checkQuizAnswer('calm')" style="min-width:110px;">01 平静安逸</button>
+                <button class="action-btn-outline" onclick="checkQuizAnswer('exploratory')" style="min-width:110px;">02 探索好奇</button>
+                <button class="action-btn-outline" onclick="checkQuizAnswer('affiliative')" style="min-width:110px;">03 亲和友好</button>
+                <button class="action-btn-outline" onclick="checkQuizAnswer('agitated')" style="min-width:110px;">04 激动焦躁</button>
+                <button class="action-btn-outline" onclick="checkQuizAnswer('fearful')" style="min-width:110px;">05 恐惧警惕</button>
+            </div>
+
+            <div id="quiz-result" style="display:none; margin-top:20px; padding:16px; border-radius:var(--radius-sm); background:var(--bg-card); border:1px solid var(--border-subtle); font-size:15px; line-height:1.7;"></div>
+
+            <div style="display:flex; justify-content:space-between; margin-top:24px;">
+                <button class="action-btn-outline" onclick="quizPrev()" id="quiz-prev-btn" style="visibility:hidden;">← 上一题</button>
+                <button class="action-btn" onclick="quizNext()" id="quiz-next-btn">下一题 →</button>
+            </div>
+
+            <div id="quiz-final" style="display:none; margin-top:30px; padding:24px; border-radius:var(--radius-sm); background:var(--bg-card); border:1px solid var(--gold); text-align:center;"></div>
+        </div>
+    </div>
+</div>
+
+<!-- 物种图鉴页 -->
+<div id="encyclopedia-page" class="detail-page">
+    <div class="wrap">
+        <button class="back-link" onclick="showPage('main')">← 返回首页</button>
+        <div style="max-width:1100px; margin:0 auto;">
+            <div class="detail-header">
+                <h1>仰鼻猴属数字生态全考</h1>
+                <p class="sub">跨越时空阻隔，系统梳理高山王者的生存刻场与基因变迁纪要</p>
+            </div>
+
+            <div class="enc-section reveal">
+                <h2>起源演化与器官妥协</h2>
+                <p>金丝猴所在的仰鼻猴属（<em>Rhinopithecus</em>），其最为显著的共同特征——上翘无缘的鼻部结构，并非某种造物主的审美巧合，而是适应第四纪冰川期以来欧亚大陆地质变动与高寒缺氧环境所做出的绝对生理妥协。大跨度的鼻骨退化有效缩短了冷空气在鼻腔逗留遇阻生冻的概率。</p>
+                <p>与此同时，退化的嗅觉空间由高度发达的面部微缩肌群补偿。它们不仅拥有无与伦比的身手，更依靠丰富的表情单元构建长时记忆与群内微权力结构网络，在灵长目社交智力榜上具有不可替代的地位。</p>
+            </div>
+
+            <div class="enc-section reveal">
+                <h2>地域分化的五大亚系</h2>
+                <div class="species-grid">
+                    <div class="species-card">
+                        <img src="https://i.postimg.cc/gJJ6kQz7/a6002a6ace97deeb2683a1e547608a45.jpg">
+                        <div class="species-card-body">
+                            <h3>川金丝猴 <em style="color:var(--text-secondary); font-size:13px;">R. roxellana</em></h3>
+                            <p>标志性的金光长背毛，占据着横断山区及秦岭最为关键的核心林线。它们建立了从"全雄联盟"向母系主导迁移的错综社会。</p>
+                        </div>
+                    </div>
+                    <div class="species-card">
+                        <img src="https://i.postimg.cc/L5Pk2wv9/c7350a40a5ba4ff092ae60cf7530202b.jpg">
+                        <div class="species-card-body">
+                            <h3>滇金丝猴 <em style="color:var(--text-secondary); font-size:13px;">R. bieti</em></h3>
+                            <p>攀爬在海拔三四千米的雪原与地衣层之间，黑白强对比的礼服与血烈般的红唇，是藏东南神话中真正的雪山图腾核心。</p>
+                        </div>
+                    </div>
+                    <div class="species-card">
+                        <img src="https://i.postimg.cc/8CChjjwt/71775df87b44b912fc171bf65338ab2f.jpg">
+                        <div class="species-card-body">
+                            <h3>黔金丝猴 <em style="color:var(--text-secondary); font-size:13px;">R. brelichi</em></h3>
+                            <p>贵州武陵山区梵净山独有。霜蓝色的冷面与金背呈现视觉极致对峙，由于空间压缩，被誉为进化链上的"脆弱明珠"。</p>
+                        </div>
+                    </div>
+                    <div class="species-card">
+                        <img src="https://i.postimg.cc/rwf4Xqcw/ecf3ab99a66e9ede1f1ab7f2828e72c7.jpg">
+                        <div class="species-card-body">
+                            <h3>越南金丝猴 <em style="color:var(--text-secondary); font-size:13px;">R. avunculus</em></h3>
+                            <p>身形较细长，被毛褪去金红而偏向黑白清雅，留存于越南高危的热带喀斯特孤岛雨林中，数量之少屡破生态告警线。</p>
+                        </div>
+                    </div>
+                    <div class="species-card">
+                        <img src="https://i.postimg.cc/SNpCcZD4/f667ffcfde91d237b4b5e0c76f3dd9ab.jpg">
+                        <div class="species-card-body">
+                            <h3>怒江金丝猴 <em style="color:var(--text-secondary); font-size:13px;">R. strykeri</em></h3>
+                            <p>高黎贡山脉跨境发现的神秘分支。漆黑且无特征色过渡，下雨天易兜雨水打喷嚏的特性，成为其在隐秘环境中最真实的标志。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== PART 2/4：研究团队页（准确信息 + 首字母头像） ===== -->
+<div id="team-page" class="detail-page">
+    <div class="wrap">
+        <div class="detail-inner">
+            <button class="back-link" onclick="showPage('main')">← 返回首页</button>
+            <div class="detail-header">
+                <h1>跨学科研究团队</h1>
+                <p class="sub">融合动物行为学、计算机视觉与数字媒体设计</p>
+            </div>
+
+            <h2 class="team-segment-title">核心成员</h2>
+
+            <div class="team-member reveal">
+                <div class="team-avatar face-a">胡</div>
+                <div class="team-info">
+                    <h3>胡琦瑶</h3>
+                    <div class="role">讲师 · 西北大学信息科学与技术学院</div>
+                    <div class="desc">计算机视觉与深度学习专家，负责模型优化与系统实现。</div>
+                </div>
+            </div>
+
+            <div class="team-member reveal">
+                <div class="team-avatar face-b">彭</div>
+                <div class="team-info">
+                    <h3>彭先霖</h3>
+                    <div class="role">副教授 · 西北大学艺术学院</div>
+                    <div class="desc">数字媒体艺术与视觉传达设计专家，负责项目视觉设计与用户体验，主导科普产品艺术呈现。</div>
+                </div>
+            </div>
+
+            <div class="team-member reveal">
+                <div class="team-avatar face-c">方</div>
+                <div class="team-info">
+                    <h3>方谷</h3>
+                    <div class="role">副教授 · 西北大学生命科学学院</div>
+                    <div class="desc">动物行为学专家，负责金丝猴行为数据采集与标注，建立金丝猴行为编码体系。</div>
+                </div>
+            </div>
+
+            <div class="enc-section reveal" style="margin-top:40px; margin-bottom:10px;">
+                <h2>合作单位</h2>
+                <div class="coop-grid">
+                    <div class="coop-card">
+                        <h4>科研合作</h4>
+                        <p>中国科学院动物研究所<br>陕西省动物研究所</p>
+                    </div>
+                    <div class="coop-card">
+                        <h4>野外研究基地</h4>
+                        <p>陕西周至国家级自然保护区<br>秦岭金丝猴自然保护区</p>
+                    </div>
+                    <div class="coop-card">
+                        <h4>技术合作</h4>
+                        <p>西北大学信息科学与技术学院<br>西北大学艺术学院</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 人文脉络页 -->
+<div id="culture-page" class="detail-page">
+    <div class="wrap">
+        <div class="detail-inner">
+            <button class="back-link" onclick="showPage('main')">← 返回首页</button>
+            <div class="detail-header">
+                <h1>金丝猴文化探索与生态回响</h1>
+                <p class="sub">从古籍神话走向现代生态文明，跨越数千年的文化沉积</p>
+            </div>
+
+            <div class="enc-section reveal">
+                <h2>一、神话传说中的金色图腾</h2>
+                <p>尽管《西游记》中孙悟空的生物学原型本是猕猴，但金丝猴标志性的金色毛发与威仪神态，使其在民间传播中与"美猴王"形象高度重叠。川滇相交的古老地带，百姓常将其奉为"大圣"遗族——它已不仅是动物，更是中国古典神话在现实中最鲜活的投射。</p>
+                <p>在西南少数民族的创世神话中，金丝猴多扮演山神使者或森林守护者。传说它们能预知风暴，金色皮毛是太阳神洒落的恩赐，护佑着高山冷杉构成的原始秘境。</p>
+            </div>
+
+            <div class="enc-section reveal">
+                <h2>二、文学艺术与古典脉络</h2>
+                <p>从《山海经》记载"猼訑"之形，到《本草纲目》的药理描述，再到历代文人诗词画卷，金丝猴始终是隐逸与神秘的代名词。宋代《尔雅翼》载："猴之大者曰猱，毛若金缕，攀树如飞，目光深邃，似能识人意。"古人早已将其视作超越寻常鸟兽的灵物。</p>
+                <p>现代文化领域中，金丝猴作为中国独有名片，活跃在邮票、纪念币、国潮设计中。从儿童文学《金丝猴王国历险记》到各类纪录片，无数创作者试图以微观视角捕捉它们的壮美与脆弱。</p>
+            </div>
+
+            <div class="enc-section reveal">
+                <h2>三、少数民族深层的文化基因</h2>
+                <ul class="enc-list">
+                    <li><strong>纳西族东巴文化：</strong>东巴经将金丝猴视作远古始祖之一，认为它们曾教授人类耕作与辨识毒草。</li>
+                    <li><strong>藏族佛教意象：</strong>藏传佛教唐卡与壁画中，猴类是智慧、灵性与顿悟的具象化身。</li>
+                    <li><strong>彝族与苗族民俗：</strong>金丝猴以几何化形态出现在刺绣纹样与银饰中，寓意机智、勇敢与吉祥平安。</li>
+                </ul>
+            </div>
+
+            <div class="enc-section reveal">
+                <h2>四、从旗舰物种到数字原境</h2>
+                <p>作为森林生态系统的旗舰物种，保护金丝猴的历程折射了中国近半个世纪生态理念的变迁——从濒危深渊到今天庞大的自然保护区走廊带，它们是人类反思如何与地球共生的实体见证。</p>
+                <p>进入数字化时代，依托行为学与表情组学的深度交融，我们实现了对金丝猴情绪的跨物种解读。当算法以高置信度解析每一次皱眉与发声，科技正在帮我们跨越物种间的理解鸿沟。</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== PART 4/5 + PART 5/5：交互逻辑与创意背景脚本 ===== -->
+<script>
+    /* ----- v12 PART 5/5：动态森林交互背景 ----- */
+    (function initForestBackground() {
+        const canvas = document.getElementById('forest-canvas');
+        const ctx = canvas.getContext('2d', { alpha: true });
+        if (!ctx) return;
+
+        let width = 0;
+        let height = 0;
+        let dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+        const pointer = { x: 0, y: 0, vx: 0, vy: 0, lastMove: 0 };
+        let lastX = 0;
+        let lastY = 0;
+
+        const leaves = [];
+        const fireflies = [];
+        const bursts = [];
+
+        function resizeCanvas() {
+            dpr = Math.min(window.devicePixelRatio || 1, 2);
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = Math.floor(width * dpr);
+            canvas.height = Math.floor(height * dpr);
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        }
+
+        function rand(min, max) {
+            return min + Math.random() * (max - min);
+        }
+
+        function createLeaf(resetTop) {
+            return {
+                x: rand(0, width),
+                y: resetTop ? rand(-height, 0) : rand(0, height),
+                size: rand(6, 13),
+                speedY: rand(0.25, 0.9),
+                sway: rand(0.4, 1.6),
+                angle: rand(0, Math.PI * 2),
+                spin: rand(-0.025, 0.025),
+                hue: Math.random() > 0.5 ? 'rgba(181, 223, 159, 0.55)' : 'rgba(231, 194, 129, 0.48)'
+            };
+        }
+
+        function createFirefly() {
+            return {
+                x: rand(0, width),
+                y: rand(height * 0.2, height * 0.85),
+                r: rand(1.6, 3.0),
+                vx: rand(-0.35, 0.35),
+                vy: rand(-0.2, 0.2),
+                twinkle: rand(0, Math.PI * 2)
+            };
+        }
+
+        function drawMonkeyShadow(x, y, s, alpha) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.scale(s, s);
+            ctx.fillStyle = `rgba(17, 33, 26, ${alpha})`;
+
+            ctx.beginPath();
+            ctx.ellipse(0, 0, 32, 22, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.arc(30, -18, 16, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.lineWidth = 6;
+            ctx.strokeStyle = `rgba(17, 33, 26, ${alpha * 0.95})`;
+            ctx.arc(-30, -6, 24, Math.PI * 0.1, Math.PI * 1.2, true);
+            ctx.stroke();
+
+            ctx.restore();
+        }
+
+        function spawnBurst(x, y) {
+            bursts.push({
+                x,
+                y,
+                life: 36,
+                radius: 0
+            });
+        }
+
+        function setup() {
+            resizeCanvas();
+            leaves.length = 0;
+            fireflies.length = 0;
+            for (let i = 0; i < 28; i++) leaves.push(createLeaf(true));
+            for (let i = 0; i < 14; i++) fireflies.push(createFirefly());
+        }
+
+        function updateBackground() {
+            ctx.clearRect(0, 0, width, height);
+
+            drawMonkeyShadow(width * 0.14, height * 0.79, 1.15, 0.12);
+            drawMonkeyShadow(width * 0.84, height * 0.76, 0.95, 0.09);
+
+            const mouseStill = Date.now() - pointer.lastMove > 220;
+            const windX = mouseStill ? 0 : Math.max(-2, Math.min(2, pointer.vx * 0.12));
+
+            leaves.forEach((leaf) => {
+                leaf.y += leaf.speedY;
+                leaf.x += windX + Math.sin(leaf.y * 0.015) * leaf.sway * 0.08;
+                leaf.angle += leaf.spin;
+
+                if (leaf.y > height + 20 || leaf.x < -30 || leaf.x > width + 30) {
+                    Object.assign(leaf, createLeaf(true));
+                    leaf.y = -10;
+                }
+
+                ctx.save();
+                ctx.translate(leaf.x, leaf.y);
+                ctx.rotate(leaf.angle);
+                ctx.fillStyle = leaf.hue;
+                ctx.beginPath();
+                ctx.ellipse(0, 0, leaf.size, leaf.size * 0.45, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            });
+
+            fireflies.forEach((f) => {
+                f.x += f.vx + windX * 0.25;
+                f.y += f.vy;
+                f.twinkle += 0.06;
+
+                if (f.x < 0 || f.x > width) f.vx *= -1;
+                if (f.y < height * 0.15 || f.y > height * 0.88) f.vy *= -1;
+
+                const glow = 0.35 + (Math.sin(f.twinkle) + 1) * 0.35;
+                const radius = f.r + glow * 2;
+
+                ctx.beginPath();
+                ctx.fillStyle = `rgba(255, 233, 143, ${0.12 + glow * 0.18})`;
+                ctx.arc(f.x, f.y, radius * 2.5, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.beginPath();
+                ctx.fillStyle = `rgba(255, 241, 176, ${0.55 + glow * 0.40})`;
+                ctx.arc(f.x, f.y, radius, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            for (let i = bursts.length - 1; i >= 0; i--) {
+                const b = bursts[i];
+                b.life -= 1;
+                b.radius += 1.1;
+                ctx.beginPath();
+                ctx.strokeStyle = `rgba(255, 244, 190, ${Math.max(b.life / 36, 0)})`;
+                ctx.lineWidth = 1.5;
+                ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
+                ctx.stroke();
+                if (b.life <= 0) bursts.splice(i, 1);
+            }
+
+            requestAnimationFrame(updateBackground);
+        }
+
+        window.addEventListener('mousemove', (e) => {
+            pointer.x = e.clientX;
+            pointer.y = e.clientY;
+            pointer.vx = e.clientX - lastX;
+            pointer.vy = e.clientY - lastY;
+            lastX = e.clientX;
+            lastY = e.clientY;
+            pointer.lastMove = Date.now();
+        });
+
+        canvas.addEventListener('click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const cx = e.clientX - rect.left;
+            const cy = e.clientY - rect.top;
+            for (let i = 0; i < fireflies.length; i++) {
+                const f = fireflies[i];
+                const d = Math.hypot(f.x - cx, f.y - cy);
+                if (d < 18) {
+                    spawnBurst(f.x, f.y);
+                    fireflies[i] = createFirefly();
+                    fireflies[i].x = rand(width * 0.1, width * 0.9);
+                    fireflies[i].y = rand(height * 0.2, height * 0.8);
+                    break;
+                }
+            }
+        });
+
+        window.addEventListener('resize', resizeCanvas);
+        setup();
+        requestAnimationFrame(updateBackground);
+    })();
+
+    /* ----- 导航栏响应 ----- */
+    window.addEventListener('scroll', () => {
+        document.getElementById('topbar').classList.toggle('scrolled', window.scrollY > 50);
+    });
+
+    /* ----- 路由总线 ----- */
+    const ALL_PAGES = ['main-page','encyclopedia-page','team-page','culture-page',
+                       'emotion-analysis-page','image-generation-page','video-science-page',
+                       'knowledge-base-page','knowledge-quiz-page'];
+
+    function hideAll() {
+        ALL_PAGES.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) { el.style.display = 'none'; el.classList.remove('visible'); }
+        });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function showPage(name) {
+        hideAll();
+        const id = name === 'main' ? 'main-page' : name + '-page';
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.style.display = 'block';
+        el.classList.add('visible');
+        
+        document.querySelectorAll('.nav-link').forEach(a => a.classList.remove('active'));
+        const target = document.querySelector(`.nav-link[onclick="showPage('${name}')"]`);
+        if (target) target.classList.add('active');
+        
+        if (name === 'knowledge-quiz') initQuiz();
+        
+        setTimeout(triggerReveal, 120);
+    }
+
+    function showFeature(name) {
+        // 未登录拦截：弹出登录框
+        if (!localStorage.getItem('gm_token')) {
+            openAuthModal('login');
+            return;
+        }
+        hideAll();
+        const el = document.getElementById(name + '-page');
+        if (!el) return;
+        el.style.display = 'block';
+        el.classList.add('visible');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        setTimeout(triggerReveal, 120);
+    }
+
+    /* ----- 深层视觉轮播 ----- */
+    let slideIdx = 0;
+    const SLIDE_TOTAL = 4;
+
+    function updateSlide() {
+        document.getElementById('hero-slides').style.transform = `translateX(-${slideIdx * 100}%)`;
+        document.querySelectorAll('.hero-dot').forEach((d, i) =>
+            d.classList.toggle('active', i === slideIdx)
+        );
+    }
+    function nextSlide() { slideIdx = (slideIdx + 1) % SLIDE_TOTAL; updateSlide(); resetAuto(); }
+    function prevSlide() { slideIdx = (slideIdx - 1 + SLIDE_TOTAL) % SLIDE_TOTAL; updateSlide(); resetAuto(); }
+    function goSlide(n) { slideIdx = n; updateSlide(); resetAuto(); }
+
+    let autoTimer = setInterval(nextSlide, 6000);
+    function resetAuto() { clearInterval(autoTimer); autoTimer = setInterval(nextSlide, 6000); }
+
+    /* ----- 滚动视差组 ----- */
+    function triggerReveal() {
+        document.querySelectorAll('.reveal').forEach(el => {
+            const rect = el.getBoundingClientRect();
+            if (rect.top < window.innerHeight - 60) el.classList.add('visible-scroll');
+        });
+    }
+    window.addEventListener('scroll', triggerReveal, { passive: true });
+
+    /* ----- 智能接口仿真 ----- */
+    // 代理路由：由本地后端转发到学长服务，确保ngrok等场景下可用
+    const EMOTION_API_BASE = window.location.origin + '/proxy';
+    const EMOTION_MAP = {
+        0: { en: 'Affiliative', zh: '亲和友好', desc: '个体表现出友好接触倾向，主动靠近同伴，面部肌肉放松，唇线舒展，可能发出低频联络叫声。' },
+        1: { en: 'Exploratory', zh: '探索好奇', desc: '个体对周边环境表现出强烈好奇，目光聚焦四方，肢体灵活活跃，处于主动信息收集状态。' },
+        2: { en: 'Agitated', zh: '激动焦躁', desc: '个体情绪高度激动，可能伴有快速位移、发出警示叫声或做出威胁性姿态，需注意周边环境刺激源。' },
+        3: { en: 'Fearful', zh: '恐惧警惕', desc: '双耳后贴，面部肌肉紧张，瞳孔放大，个体处于高度警戒状态，可能感知到潜在威胁或捕食者信号。' },
+        4: { en: 'Calm', zh: '平静安逸', desc: '面部肌肉全维松弛，呼吸平稳，个体处于安全阀值以上的日常静息状态，未感知到明显威胁。' }
+    };
+
+    function onEmotionImagesChange() {
+        const files = document.getElementById('monkey-images').files;
+        const hint = document.getElementById('image-file-hint');
+        const grid = document.getElementById('image-preview-grid');
+        grid.innerHTML = '';
+        if (!files.length) { hint.textContent = '未选择图片'; return; }
+        // 选图片时清空视频选择
+        document.getElementById('monkey-video-emotion').value = '';
+        hint.textContent = `已选择 ${files.length} 张图片`;
+        for (let i = 0; i < Math.min(files.length, 16); i++) {
+            const img = document.createElement('img');
+            img.src = URL.createObjectURL(files[i]);
+            img.style.cssText = 'width:52px; height:52px; object-fit:cover; border-radius:6px; border:1px solid var(--border-subtle);';
+            grid.appendChild(img);
+        }
+    }
+
+    function onEmotionVideoChange() {
+        const vFile = document.getElementById('monkey-video-emotion').files[0];
+        if (vFile) {
+            document.getElementById('monkey-images').value = '';
+            document.getElementById('image-file-hint').textContent = '未选择图片';
+            document.getElementById('image-preview-grid').innerHTML = '';
+        }
+    }
+
+    // 从视频均匀截取16帧
+    function extractFramesFromVideo(videoFile, frameCount = 16) {
+        return new Promise((resolve, reject) => {
+            const video = document.createElement('video');
+            video.muted = true;
+            video.src = URL.createObjectURL(videoFile);
+            video.addEventListener('loadedmetadata', () => {
+                const duration = video.duration;
+                const canvas = document.createElement('canvas');
+                canvas.width = 224; canvas.height = 224;
+                const ctx = canvas.getContext('2d');
+                const frames = [];
+                let captured = 0;
+                const times = Array.from({ length: frameCount }, (_, i) =>
+                    (i / (frameCount - 1)) * duration
+                );
+                function captureNext() {
+                    if (captured >= frameCount) { resolve(frames); return; }
+                    video.currentTime = times[captured];
+                }
+                video.addEventListener('seeked', () => {
+                    ctx.drawImage(video, 0, 0, 224, 224);
+                    canvas.toBlob(blob => {
+                        frames.push(new File([blob], `${captured + 1}.jpg`, { type: 'image/jpeg' }));
+                        captured++;
+                        captureNext();
+                    }, 'image/jpeg', 0.85);
+                });
+                video.addEventListener('error', reject);
+                captureNext();
+            });
+            video.addEventListener('error', reject);
+        });
+    }
+
+    // 将用户选择的图片补齐到16张（不足则循环复制）
+    function padImagesToSixteen(fileList) {
+        const originals = Array.from(fileList);
+        if (originals.length === 0) return [];
+        const padded = [];
+        for (let i = 0; i < 16; i++) {
+            padded.push(originals[i % originals.length]);
+        }
+        return padded;
+    }
+
+    async function analyzeEmotion() {
+        const mediaInput = document.getElementById('monkey-media');
+        const statusEl = document.getElementById('emotion-status');
+        const resultEl = document.getElementById('emotion-result');
+
+        const files = Array.from(mediaInput.files);
+        if (!files.length) {
+            statusEl.style.color = '#f87171';
+            statusEl.textContent = '请选择金丝猴图片或视频';
+            return;
+        }
+
+        statusEl.style.color = 'var(--text-secondary)';
+        resultEl.style.display = 'none';
+
+        const isVideo = files.some(f => f.type.startsWith('video/'));
+        let images = [];
+        let previewSrc = '';
+
+        try {
+            if (isVideo) {
+                statusEl.textContent = '⏳ 正在处理视频...';
+                const videoFile = files.find(f => f.type.startsWith('video/'));
+                images = await extractFramesFromVideo(videoFile, 16);
+                // 用第一帧作为预览（本地blob，不经过穿透）
+                previewSrc = images.length ? URL.createObjectURL(images[0]) : '';
+            } else {
+                statusEl.textContent = '⏳ 正在准备图片...';
+                const padded = padImagesToSixteen(files);
+                images = padded.map((f, i) => new File([f], `${i + 1}.jpg`, { type: f.type || 'image/jpeg' }));
+                previewSrc = URL.createObjectURL(files[0]);
+            }
+
+            statusEl.textContent = '⏳ 正在上传...';
+            const folder = 'upload_' + Date.now();
+            const formData = new FormData();
+            formData.append('folder', folder);
+            for (const f of images) formData.append('files', f);
+
+            const uploadRes = await fetch(`${EMOTION_API_BASE}/upload`, { method: 'POST', body: formData });
+            if (!uploadRes.ok) throw new Error('上传失败，HTTP ' + uploadRes.status);
+            const uploadData = await uploadRes.json();
+            if (uploadData.success === false) throw new Error('部分文件上传失败');
+
+            statusEl.textContent = '⏳ 正在分析情绪...';
+            const inferRes = await fetch(`${EMOTION_API_BASE}/inference`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text_desc: '金丝猴行为观察', data_dir: 'video/' + folder })
+            });
+            if (!inferRes.ok) throw new Error('推理接口失败，HTTP ' + inferRes.status);
+            const inferData = await inferRes.json();
+            if (inferData.predicted_label === -1) throw new Error('模型推理失败，请检查输入内容');
+
+            const emotion = EMOTION_MAP[inferData.predicted_label] || { en: 'Unknown', zh: '未知', desc: '无法识别情绪状态。' };
+            const conf = (inferData.confidence * 100).toFixed(1);
+            document.getElementById('detected-emotion').textContent = `${emotion.zh}（${emotion.en}）`;
+            document.getElementById('confidence-level').textContent = conf + '%';
+            document.getElementById('confidence-bar').style.width = conf + '%';
+            document.getElementById('behavior-prediction').textContent = emotion.desc;
+            document.getElementById('emotion-preview').src = previewSrc;
+            statusEl.textContent = '';
+            resultEl.style.display = 'block';
+        } catch (e) {
+            statusEl.style.color = '#f87171';
+            statusEl.textContent = '❌ ' + e.message;
+        }
+    }
+
+    // 自动将中文翻译为英文（使用免费 MyMemory API，无需 key）
+    async function translateToEnglish(text) {
+        if (!/[\u4e00-\u9fff]/.test(text)) return text; // 无中文则原样返回
+        try {
+            const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=zh|en`);
+            const data = await res.json();
+            if (data.responseStatus === 200) return data.responseData.translatedText;
+        } catch (e) {}
+        return text; // 翻译失败则原样使用
+    }
+
+    async function generateImage() {
+        const val = document.getElementById('prompt-input').value.trim();
+        const statusEl = document.getElementById('image-status');
+        const resultEl = document.getElementById('image-result');
+        if (!val) { statusEl.style.color = '#f87171'; statusEl.textContent = '请输入描述内容'; return; }
+
+        statusEl.style.color = 'var(--text-secondary)';
+        statusEl.textContent = '⏳ 正在翻译描述...';
+        resultEl.style.display = 'none';
+
+        // 自动翻译中文输入
+        const sceneDesc = await translateToEnglish(val);
+        statusEl.textContent = '⏳ 正在生成图片，请稍候...';
+
+        // [SPECIES RULES]：物种外观强制规则，Flux不支持negative_prompt参数，所有限制必须写入主提示词
+        const subjectRules = 'Rhinopithecus roxellana golden snub-nosed monkey, thick bright golden-orange fur, snow-white face, paper-white facial skin, white as snow monkey face, bright golden fur body, amber eyes, upturned snub nose, photorealistic wildlife photography';
+        const fullPrompt = `${subjectRules}, ${sceneDesc}, highly detailed, 8k`;
+        const prompt = encodeURIComponent(fullPrompt);
+        const seed = Math.floor(Math.random() * 999999);
+        const imgUrl = `https://image.pollinations.ai/prompt/${prompt}?width=768&height=512&seed=${seed}&nologo=true&model=flux`;
+
+        const img = document.getElementById('generated-img');
+        img.onload = () => {
+            statusEl.textContent = '';
+            document.getElementById('image-description').textContent = val;
+            document.getElementById('video-download-link') && (document.getElementById('video-download-link').href = imgUrl);
+            const dlLink = resultEl.querySelector('a[download]');
+            if (dlLink) { dlLink.href = imgUrl; }
+            resultEl.style.display = 'block';
+        };
+        img.onerror = () => {
+            statusEl.style.color = '#f87171';
+            statusEl.textContent = '❌ 图片生成失败，请稍后重试';
+        };
+        img.src = imgUrl;
+    }
+
+    function downloadGeneratedImg() {
+        const img = document.getElementById('generated-img');
+        if (!img.src) return;
+        const a = document.createElement('a');
+        a.href = img.src;
+        a.download = '金丝猴生成图.jpg';
+        a.target = '_blank';
+        a.click();
+    }
+
+
+
+    function openVideoModal() {}
+
+    function renderMarkdown(text) {
+        // 转义HTML特殊字符
+        text = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        // 标题
+        text = text.replace(/^### (.+)$/gm, '<h4>$1</h4>');
+        text = text.replace(/^## (.+)$/gm, '<h3>$1</h3>');
+        text = text.replace(/^# (.+)$/gm, '<h2>$1</h2>');
+        // 粗体、斜体（em标签复用为金色高亮）
+        text = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+        text = text.replace(/\*(.+?)\*/g, '<em>$1</em>');
+        // 列表
+        text = text.replace(/^[-•] (.+)$/gm, '<li>$1</li>');
+        text = text.replace(/(<li>[\s\S]*?<\/li>\n?)+/g, m => '<ul>' + m + '</ul>');
+        // 段落（双换行分段）
+        const blocks = text.split(/\n{2,}/);
+        text = blocks.map(b => {
+            b = b.trim();
+            if (!b) return '';
+            if (/^<(h[2-4]|ul)/.test(b)) return b;
+            return '<p>' + b.replace(/\n/g, '<br>') + '</p>';
+        }).filter(Boolean).join('');
+        return text;
+    }
+
+    async function getAnswer() {
+        const q = document.getElementById('question-input').value.trim();
+        if (!q) return;
+
+        const btn = document.getElementById('ask-btn');
+        btn.disabled = true;
+        btn.textContent = '检索中…';
+
+        const resultBlock = document.getElementById('answer-result');
+        document.getElementById('question-text').textContent = q;
+        const answerText = document.getElementById('answer-text');
+        answerText.innerHTML = '<em style="color:rgba(255,255,255,0.4);font-style:normal;">正在分析，请稍候…</em>';
+        resultBlock.style.display = 'block';
+
+        try {
+            const res = await fetch(`${API_BASE}/api/ask`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ question: q })
+            });
+            const data = await res.json();
+            if (!res.ok) { answerText.textContent = data.detail || '请求失败，请稍后再试。'; return; }
+            answerText.innerHTML = renderMarkdown(data.answer);
+        } catch(e) {
+            answerText.textContent = '请求失败：' + e.message;
+        } finally {
+            btn.disabled = false;
+            btn.textContent = '获取回答';
+        }
+    }
+
+    const QUIZ_DATA = [
+        { img: 'https://s3.bmp.ovh/imgs/2025/11/02/3437af694578b40a.jpg', correct: 'calm', q: '通过面部肌肉牵引，这只个体的核心情绪偏向于：', hint: '整体面部肌肉松弛，眼睑自然下垂，无明显的眉弓收缩或嘴角紧绷——这是平静安逸的典型面部信号组合。' },
+        { img: '/proxy/frame/14/1', correct: 'exploratory', q: '观察这只年轻金丝猴的表情，通过面部信号，它的核心情绪最可能是：', hint: '宽开的双眼与微张的嘴角，整体呈现专注好奇的神态——这是探索行为启动时的典型面部表达。' },
+        { img: '/proxy/frame/5/1', correct: 'agitated', q: '通过这只个体的面部肌肉牵引，判断其当前情绪状态：', hint: '眉头紧锁、眼皮下压，面部肌肉整体收紧——这是个体受到干扰或情绪升高时的典型外显。' },
+        { img: '/proxy/frame/12/1', correct: 'calm', q: '这只金丝猴眼睛近乎闭合，头部低沉，它的情绪偏向于：', hint: '眼睛几乎完全闭合，整体肌肉放松——高唤醒情绪不会允许这种姿态出现，这是平静安逸的核心特征。' },
+        { img: '/proxy/frame/13/16', correct: 'fearful', q: '直视前方的凝视与紧绷的嘴角，这只金丝猴正处于：', hint: '直视前方并不代表好奇——当嘴角紧绷、身体略僵时，这种凝视更接近高度戒备的防御信号。' },
+        { img: 'https://s3.bmp.ovh/imgs/2025/11/22/f3b362fe81ae12d5.jpg', correct: 'affiliative', q: '这张生态场景图中，金丝猴整体呈现出怎样的情绪状态？', hint: '放松的体态、自然分布的群体姿态——这种无戒备、无攻击倾向的个体间相处正是亲和友好情绪的群体外显。' },
+    ];
+    const QUIZ_OPTIONS = [
+        { key: 'calm', label: '平静安逸' },
+        { key: 'exploratory', label: '探索好奇' },
+        { key: 'affiliative', label: '亲和友好' },
+        { key: 'agitated', label: '激动焦躁' },
+        { key: 'fearful', label: '恐惧警惕' },
+    ];
+    let quizIdx = 0;
+    let quizAnswered = new Array(QUIZ_DATA.length).fill(false);
+
+    function initQuiz() {
+        quizIdx = 0;
+        quizAnswered = new Array(QUIZ_DATA.length).fill(false);
+        // 预加载所有题图
+        QUIZ_DATA.forEach(q => { const img = new Image(); img.src = q.img; });
+        showQuizQuestion(0);
+    }
+
+    function showQuizQuestion(idx) {
+        quizIdx = idx;
+        const q = QUIZ_DATA[idx];
+        const imgEl = document.getElementById('quiz-img');
+        imgEl.src = q.img;
+        document.getElementById('quiz-question').textContent = q.q;
+        document.getElementById('quiz-progress').textContent = `第 ${idx + 1} 题 / 共 ${QUIZ_DATA.length} 题`;
+        document.getElementById('quiz-result').style.display = 'none';
+        document.getElementById('quiz-final').style.display = 'none';
+
+        // 进度点
+        document.getElementById('quiz-dots').innerHTML = QUIZ_DATA.map((_, i) =>
+            `<div style="width:10px;height:10px;border-radius:50%;background:${i === idx ? 'var(--gold)' : quizAnswered[i] ? 'var(--emerald)' : 'var(--border-subtle)'};transition:background .3s;"></div>`
+        ).join('');
+
+        // 选项
+        document.getElementById('quiz-options').innerHTML = QUIZ_OPTIONS.map((opt, i) =>
+            `<button class="action-btn-outline" onclick="checkQuizAnswer('${opt.key}')" style="min-width:110px;">0${i+1} ${opt.label}</button>`
+        ).join('');
+
+        document.getElementById('quiz-prev-btn').style.visibility = idx > 0 ? 'visible' : 'hidden';
+        document.getElementById('quiz-next-btn').textContent = idx < QUIZ_DATA.length - 1 ? '下一题 →' : '完成';
+    }
+
+    function checkQuizAnswer(key) {
+        const q = QUIZ_DATA[quizIdx];
+        const resultEl = document.getElementById('quiz-result');
+        resultEl.style.display = 'block';
+        if (key === q.correct) {
+            quizAnswered[quizIdx] = true;
+            resultEl.innerHTML = '判断准确。' + q.hint;
+            resultEl.style.borderColor = 'var(--emerald)';
+            resultEl.style.color = 'var(--emerald)';
+            // 更新进度点
+            document.getElementById('quiz-dots').innerHTML = QUIZ_DATA.map((_, i) =>
+                `<div style="width:10px;height:10px;border-radius:50%;background:${i === quizIdx ? 'var(--gold)' : quizAnswered[i] ? 'var(--emerald)' : 'var(--border-subtle)'};transition:background .3s;"></div>`
+            ).join('');
+        } else {
+            resultEl.innerHTML = '再想想——仔细观察它的眼神与嘴部状态。';
+            resultEl.style.borderColor = 'rgba(226,100,100,0.4)';
+            resultEl.style.color = '#e88';
+        }
+    }
+
+    function quizPrev() { if (quizIdx > 0) showQuizQuestion(quizIdx - 1); }
+
+    function quizNext() {
+        if (quizIdx < QUIZ_DATA.length - 1) {
+            showQuizQuestion(quizIdx + 1);
+        } else {
+            const correctCount = quizAnswered.filter(Boolean).length;
+            const finalEl = document.getElementById('quiz-final');
+            finalEl.style.display = 'block';
+            finalEl.innerHTML = `
+                <div style="color:var(--gold); font-size:22px; margin-bottom:12px;">挑战完成</div>
+                <div style="font-size:16px; margin-bottom:16px;">答对 <strong style="color:var(--gold);">${correctCount}</strong> / ${QUIZ_DATA.length} 题</div>
+                <div style="font-size:14px; color:var(--text-secondary); line-height:1.9;">
+                    金丝猴的面部情绪识别是一项综合技能——眼睑张合程度、嘴唇状态与眉弓肌肉三者共同构成情绪信号系统。<br>
+                    反复观察不同个体在自然情境下的面部变化，会帮助你建立更稳固的识别直觉。
+                </div>
+            `;
+        }
+    }
+
+    function checkAnswer(ans) {
+        const box = document.getElementById('quiz-result');
+        box.style.display = 'block';
+        if (ans === '平静') {
+            box.innerHTML = '✅ 回答正确！这只金丝猴面部肌肉松弛，目光柔和，身体姿态自然，正是平静放松的典型表现。';
+            box.style.borderColor = 'var(--emerald)';
+            box.style.color = 'var(--emerald)';
+        } else {
+            box.innerHTML = `⚠️ 不太对哦，你选择了「${ans}」。仔细观察它的表情——面部肌肉并没有明显紧绷，眼神也很平和，正确答案是 <strong>平静放松</strong>。`;
+            box.style.borderColor = 'rgba(226,100,100,0.4)';
+            box.style.color = '#e88';
+        }
+    }
+
+    /* ----- v13 功能区焦点轮播 ----- */
+    let featureIdx = 0;
+    const carouselItems = document.querySelectorAll('.carousel-item');
+    const featureTotal = carouselItems.length;
+    const featureDotsWrap = document.getElementById('feature-dots');
+
+    // 生成指示点
+    for (let i = 0; i < featureTotal; i++) {
+        const dot = document.createElement('div');
+        dot.className = 'carousel-dot' + (i === 0 ? ' active' : '');
+        dot.onclick = () => goFeatureSlide(i);
+        featureDotsWrap.appendChild(dot);
+    }
+
+    function layoutCarousel() {
+        const wrapWidth = document.querySelector('.carousel-wrapper').offsetWidth;
+        const centerW = Math.min(520, wrapWidth * 0.42);
+        const centerH = 380;
+        const sideW = Math.min(300, wrapWidth * 0.24);
+        const sideH = 260;
+        const farW = Math.min(200, wrapWidth * 0.16);
+        const farH = 200;
+        const centerX = wrapWidth / 2;
+
+        carouselItems.forEach((item, i) => {
+            let offset = i - featureIdx;
+            // Wrap around for circular feel
+            if (offset > Math.floor(featureTotal / 2)) offset -= featureTotal;
+            if (offset < -Math.floor(featureTotal / 2)) offset += featureTotal;
+
+            item.classList.toggle('active', offset === 0);
+
+            let x, y, w, h, z, opacity, scale;
+
+            if (offset === 0) {
+                w = centerW; h = centerH; z = 5; opacity = 1;
+                x = centerX - w / 2;
+                y = (420 - h) / 2;
+            } else if (Math.abs(offset) === 1) {
+                w = sideW; h = sideH; z = 3; opacity = 0.75;
+                x = offset === -1 ? centerX - centerW / 2 - w - 20 : centerX + centerW / 2 + 20;
+                y = (420 - h) / 2;
+            } else {
+                w = farW; h = farH; z = 1; opacity = 0.4;
+                const sideOffset = offset < 0 ? -1 : 1;
+                x = sideOffset === -1 ? centerX - centerW / 2 - sideW - farW - 40 : centerX + centerW / 2 + sideW + 40;
+                y = (420 - h) / 2;
+            }
+
+            item.style.width = w + 'px';
+            item.style.height = h + 'px';
+            item.style.left = x + 'px';
+            item.style.top = y + 'px';
+            item.style.zIndex = z;
+            item.style.opacity = opacity;
+        });
+    }
+
+    function goFeatureSlide(idx) {
+        featureIdx = ((idx % featureTotal) + featureTotal) % featureTotal;
+        layoutCarousel();
+        document.querySelectorAll('.carousel-dot').forEach((d, i) => d.classList.toggle('active', i === featureIdx));
+    }
+
+    function featureCarouselNext() { goFeatureSlide(featureIdx + 1); }
+    function featureCarouselPrev() { goFeatureSlide(featureIdx - 1); }
+
+    // 点击卡片：如果是当前选中则进入详情，否则切换聚焦
+    carouselItems.forEach((item, i) => {
+        item.addEventListener('click', () => {
+            if (i === featureIdx) {
+                showFeature(item.dataset.feature);
+            } else {
+                goFeatureSlide(i);
+            }
+        });
+    });
+
+    window.addEventListener('resize', layoutCarousel);
+    layoutCarousel();
+
+    /* ----- 初构化 ----- */
+    document.addEventListener('DOMContentLoaded', () => {
+        showPage('main');
+        setTimeout(triggerReveal, 250);
+        restoreSession();
+    });
+
+    /* ========== 登录注册 ========== */
+    const API_BASE = 'https://wafery-deloris-mushroomy.ngrok-free.dev';
+    //const API_BASE = 'http://localhost:8000';
+    
+    // 请求超时时间（毫秒）
+    const REQUEST_TIMEOUT = 120000;  // 120秒，给云端更多响应时间
+    
+    let authMode = 'login';
+    let sliderVerified = false;
+    let codeCooldown = 0;
+    let codeTimer = null;
+
+    function openAuthModal(mode) {
+        authMode = mode;
+        sliderVerified = false;
+        document.getElementById('auth-overlay').classList.add('show');
+        document.getElementById('auth-username').value = '';
+        document.getElementById('auth-password').value = '';
+        document.getElementById('auth-password2').value = '';
+        document.getElementById('auth-email') && (document.getElementById('auth-email').value = '');
+        document.getElementById('auth-code') && (document.getElementById('auth-code').value = '');
+        document.getElementById('auth-msg').textContent = '';
+        updateAuthUI();
+    }
+
+    function closeAuthModal() {
+        document.getElementById('auth-overlay').classList.remove('show');
+    }
+
+    function switchAuthMode() {
+        authMode = authMode === 'login' ? 'register' : 'login';
+        sliderVerified = false;
+        document.getElementById('auth-msg').textContent = '';
+        updateAuthUI();
+    }
+
+    function updateAuthUI() {
+        const isLogin = authMode === 'login';
+        document.getElementById('auth-title').textContent = isLogin ? '登录' : '注册';
+        document.getElementById('auth-sub').textContent = isLogin ? '欢迎回到金丝猴智能平台' : '创建你的专属账号';
+        document.getElementById('auth-submit').textContent = isLogin ? '登录' : '注册';
+        document.getElementById('auth-password2').style.display = isLogin ? 'none' : 'block';
+        document.getElementById('auth-email-wrap').style.display = isLogin ? 'none' : 'block';
+        document.getElementById('auth-code-wrap').style.display = isLogin ? 'none' : 'block';
+        document.getElementById('auth-pwd-strength').style.display = isLogin ? 'none' : 'block';
+        document.getElementById('auth-password').placeholder = isLogin ? '密码' : '密码（8位以上，含字母+数字+符号）';
+        document.getElementById('auth-switch').innerHTML = isLogin
+            ? '还没有账号？<a onclick="switchAuthMode()">去注册</a>'
+            : '已有账号？<a onclick="switchAuthMode()">去登录</a>';
+        checkPwdStrength();
+    }
+
+    /* ---- 密码强度检测 ---- */
+    function checkPwdStrength() {
+        if (authMode !== 'register') return;
+        const pw = document.getElementById('auth-password').value;
+        const bar = document.getElementById('pwd-bar');
+        const text = document.getElementById('pwd-text');
+        if (!pw) { bar.style.width = '0'; text.textContent = ''; return; }
+        let score = 0;
+        if (pw.length >= 8) score++;
+        if (/[a-zA-Z]/.test(pw)) score++;
+        if (/\d/.test(pw)) score++;
+        if (/[!@#$%^&*()_+\-=\[\]{};:'",./<>?\\|`~]/.test(pw)) score++;
+        const levels = [
+            { w: '25%', c: '#f87171', t: '弱' },
+            { w: '50%', c: '#fb923c', t: '较弱' },
+            { w: '75%', c: '#facc15', t: '中等' },
+            { w: '100%', c: '#4ade80', t: '强' },
+        ];
+        const lv = levels[Math.max(0, score - 1)];
+        bar.style.width = lv.w;
+        bar.style.background = lv.c;
+        text.style.color = lv.c;
+        text.textContent = '密码强度：' + lv.t;
+    }
+
+    /* ---- 拼图人机验证（弹窗式） ---- */
+    const PW = 280, PH = 170, PS = 44, PR = 9;
+    let puzzleTargetX = 0, puzzlePieceY = 0, puzzleCutX = 0;
+    let puzzleDragging = false, puzzleStartX = 0, puzzleThumbLeft = 0;
+
+    // 纯 Canvas 生成风景画（无需外部图片）
+    function drawScenery(ctx, w, h) {
+        // 天空渐变
+        const sky = ctx.createLinearGradient(0, 0, 0, h * 0.6);
+        sky.addColorStop(0, '#1a4a3a');
+        sky.addColorStop(0.5, '#2d6b4f');
+        sky.addColorStop(1, '#4a9b6e');
+        ctx.fillStyle = sky;
+        ctx.fillRect(0, 0, w, h);
+
+        // 远山
+        ctx.fillStyle = '#1e5a3a';
+        ctx.beginPath(); ctx.moveTo(0, h * 0.45);
+        for (let x = 0; x <= w; x += 20) {
+            ctx.lineTo(x, h * 0.45 + Math.sin(x * 0.025) * 25 + Math.sin(x * 0.06) * 10);
+        }
+        ctx.lineTo(w, h); ctx.lineTo(0, h); ctx.fill();
+
+        // 近山
+        ctx.fillStyle = '#1a4830';
+        ctx.beginPath(); ctx.moveTo(0, h * 0.6);
+        for (let x = 0; x <= w; x += 15) {
+            ctx.lineTo(x, h * 0.6 + Math.sin(x * 0.04 + 2) * 20 + Math.sin(x * 0.09) * 8);
+        }
+        ctx.lineTo(w, h); ctx.lineTo(0, h); ctx.fill();
+
+        // 地面
+        ctx.fillStyle = '#163d28';
+        ctx.fillRect(0, h * 0.75, w, h * 0.25);
+
+        // 树干 + 树冠
+        const treeCount = 5 + Math.floor(Math.random() * 4);
+        for (let i = 0; i < treeCount; i++) {
+            const tx = 20 + Math.random() * (w - 40);
+            const ty = h * 0.55 + Math.random() * (h * 0.25);
+            const th = 30 + Math.random() * 40;
+            // trunk
+            ctx.fillStyle = '#3d2b1a';
+            ctx.fillRect(tx - 3, ty - th * 0.3, 6, th * 0.5);
+            // canopy
+            ctx.fillStyle = `rgb(${30 + Math.random() * 40}, ${80 + Math.random() * 60}, ${40 + Math.random() * 30})`;
+            ctx.beginPath();
+            ctx.arc(tx, ty - th * 0.4, 12 + Math.random() * 14, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // 光斑
+        for (let i = 0; i < 20; i++) {
+            const lx = Math.random() * w, ly = Math.random() * h;
+            ctx.fillStyle = `rgba(255,255,200,${0.03 + Math.random() * 0.06})`;
+            ctx.beginPath();
+            ctx.arc(lx, ly, 5 + Math.random() * 15, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+
+    function drawPuzzlePath(ctx, x, y) {
+        const s = PS, r = PR;
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        // 上凸
+        ctx.lineTo(x + s * 0.38, y);
+        ctx.arc(x + s / 2, y, r, Math.PI, 0, false);
+        ctx.lineTo(x + s, y);
+        // 右凸
+        ctx.lineTo(x + s, y + s * 0.38);
+        ctx.arc(x + s, y + s / 2, r, -Math.PI / 2, Math.PI / 2, false);
+        ctx.lineTo(x + s, y + s);
+        // 下平
+        ctx.lineTo(x, y + s);
+        // 左凹
+        ctx.lineTo(x, y + s * 0.62);
+        ctx.arc(x, y + s / 2, r, Math.PI / 2, -Math.PI / 2, false);
+        ctx.lineTo(x, y);
+        ctx.closePath();
+    }
+
+    function genPuzzle() {
+        const bgC = document.getElementById('puzzle-bg');
+        const pcC = document.getElementById('puzzle-piece');
+        const thumb = document.getElementById('puzzle-thumb');
+        const fill = document.getElementById('puzzle-fill');
+        const text = document.getElementById('puzzle-text');
+        const result = document.getElementById('puzzle-result');
+        bgC.width = PW; bgC.height = PH;
+        pcC.width = PW; pcC.height = PH;
+        pcC.style.left = '0px';
+        if (thumb) { thumb.style.left = '0'; thumb.textContent = '▶'; }
+        if (fill) fill.style.width = '0';
+        if (text) text.textContent = '拖动滑块完成拼图';
+        if (result) { result.textContent = ''; result.style.color = ''; }
+        sliderVerified = false;
+
+        const bgCtx = bgC.getContext('2d');
+        const pcCtx = pcC.getContext('2d');
+
+        // 绘制随机风景
+        drawScenery(bgCtx, PW, PH);
+
+        // 随机拼图位置
+        puzzlePieceY = 25 + Math.random() * (PH - PS - 50);
+        puzzleTargetX = 70 + Math.random() * (PW - PS - 100);
+
+        // 获取背景图像数据
+        const imgData = bgCtx.getImageData(0, 0, PW, PH);
+
+        // 在背景上画缺口（暗色 + 内阴影）
+        bgCtx.save();
+        drawPuzzlePath(bgCtx, puzzleTargetX, puzzlePieceY);
+        bgCtx.fillStyle = 'rgba(0,0,0,0.5)';
+        bgCtx.fill();
+        bgCtx.strokeStyle = 'rgba(255,255,255,0.3)';
+        bgCtx.lineWidth = 1.5;
+        bgCtx.stroke();
+        bgCtx.restore();
+
+        // 在拼图canvas上绘制碎片
+        // 先把原图画上去
+        const tmpCanvas = document.createElement('canvas');
+        tmpCanvas.width = PW; tmpCanvas.height = PH;
+        const tmpCtx = tmpCanvas.getContext('2d');
+        tmpCtx.putImageData(imgData, 0, 0);
+
+        pcCtx.clearRect(0, 0, PW, PH);
+        pcCtx.save();
+        // 将拼图块移到左边（偏移量 = puzzleTargetX - 10）
+        puzzleCutX = puzzleTargetX - 10;
+        pcCtx.translate(-puzzleCutX, 0);
+        drawPuzzlePath(pcCtx, puzzleTargetX, puzzlePieceY);
+        pcCtx.clip();
+        pcCtx.drawImage(tmpCanvas, 0, 0);
+        // 边框
+        pcCtx.strokeStyle = 'rgba(255,255,255,0.8)';
+        pcCtx.lineWidth = 2;
+        drawPuzzlePath(pcCtx, puzzleTargetX, puzzlePieceY);
+        pcCtx.stroke();
+        // 微阴影
+        pcCtx.shadowColor = 'rgba(0,0,0,0.5)';
+        pcCtx.shadowBlur = 6;
+        pcCtx.stroke();
+        pcCtx.restore();
+    }
+
+    function openPuzzle() {
+        document.getElementById('puzzle-popup').classList.add('show');
+        genPuzzle();
+    }
+    function closePuzzle() {
+        document.getElementById('puzzle-popup').classList.remove('show');
+    }
+
+    // 滑块拖拽
+    function initPuzzleSlider() {
+        const bar = document.getElementById('puzzle-bar');
+        const thumb = document.getElementById('puzzle-thumb');
+        const fill = document.getElementById('puzzle-fill');
+        const pcC = document.getElementById('puzzle-piece');
+        if (!bar || !thumb) return;
+
+        function getMax() { return bar.offsetWidth - 40; }
+
+        function onStart(e) {
+            if (sliderVerified) return;
+            puzzleDragging = true;
+            puzzleStartX = e.touches ? e.touches[0].clientX : e.clientX;
+            puzzleThumbLeft = parseInt(thumb.style.left) || 0;
+            e.preventDefault();
+        }
+        function onMove(e) {
+            if (!puzzleDragging) return;
+            const cx = e.touches ? e.touches[0].clientX : e.clientX;
+            let nl = puzzleThumbLeft + (cx - puzzleStartX);
+            nl = Math.max(0, Math.min(nl, getMax()));
+            thumb.style.left = nl + 'px';
+            fill.style.width = nl + 'px';
+            // 移动拼图块
+            const ratio = PW / bar.offsetWidth;
+            pcC.style.left = (nl * ratio) + 'px';
+        }
+        function onEnd() {
+            if (!puzzleDragging) return;
+            puzzleDragging = false;
+            const cur = parseInt(thumb.style.left) || 0;
+            const ratio = PW / bar.offsetWidth;
+            const actualX = cur * ratio;
+            const diff = Math.abs(actualX - puzzleCutX);
+            const result = document.getElementById('puzzle-result');
+            const text = document.getElementById('puzzle-text');
+
+            if (diff < 6) {
+                // 验证通过
+                sliderVerified = true;
+                result.textContent = '✓ 验证通过';
+                result.style.color = '#4ade80';
+                text.textContent = '✓ 验证通过';
+                text.style.color = '#4ade80';
+                fill.style.background = '#4ade80';
+                thumb.textContent = '✓';
+                thumb.style.background = '#4ade80';
+                thumb.style.color = '#fff';
+                pcC.style.left = puzzleCutX + 'px';
+                // 自动发送验证码
+                setTimeout(() => {
+                    closePuzzle();
+                    doSendCode();
+                }, 600);
+            } else {
+                // 失败
+                result.textContent = '✗ 拼图不准确，请重试';
+                result.style.color = '#f87171';
+                fill.style.background = '#f87171';
+                thumb.style.background = '#f87171';
+                thumb.style.color = '#fff';
+                setTimeout(() => {
+                    genPuzzle();
+                }, 800);
+            }
+        }
+        thumb.addEventListener('mousedown', onStart);
+        thumb.addEventListener('touchstart', onStart, { passive: false });
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('touchmove', onMove, { passive: false });
+        document.addEventListener('mouseup', onEnd);
+        document.addEventListener('touchend', onEnd);
+    }
+
+    /* ---- 点击发送验证码 → 弹出拼图 ---- */
+    function onClickSendCode() {
+        const email = document.getElementById('auth-email').value.trim();
+        const msgEl = document.getElementById('auth-msg');
+        msgEl.className = 'auth-msg'; msgEl.textContent = '';
+
+        if (!email) { msgEl.className = 'auth-msg err'; msgEl.textContent = '请输入邮箱地址'; return; }
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { msgEl.className = 'auth-msg err'; msgEl.textContent = '邮箱格式不正确'; return; }
+
+        // 如果在冷却中不弹
+        if (codeCooldown > 0) return;
+
+        openPuzzle();
+    }
+
+    /* ---- 验证通过后真正发送验证码 ---- */
+    async function doSendCode() {
+        const email = document.getElementById('auth-email').value.trim();
+        const msgEl = document.getElementById('auth-msg');
+        const btn = document.getElementById('send-code-btn');
+        btn.disabled = true;
+
+        try {
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
+
+            const res = await fetch(`${API_BASE}/api/send-code`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email }),
+                signal: controller.signal
+            });
+            clearTimeout(timeout);
+            
+            const data = await res.json();
+            if (!res.ok) {
+                msgEl.className = 'auth-msg err';
+                msgEl.textContent = data.detail || '发送失败';
+                btn.disabled = false;
+                return;
+            }
+            msgEl.className = 'auth-msg ok';
+            // 强制显示后端返回的消息，不显示 hint
+            msgEl.textContent = data.message || '验证码已发送，请查看邮箱';
+            startCodeCooldown();
+        } catch (e) {
+            msgEl.className = 'auth-msg err';
+            let errorMsg = '无法连接服务器';
+            
+            if (e.name === 'AbortError') {
+                errorMsg = '请求超时，请检查网络连接或稍后重试';
+            }
+            
+            msgEl.textContent = errorMsg;
+            btn.disabled = false;
+        }
+    }
+
+    function startCodeCooldown() {
+        codeCooldown = 60;
+        const btn = document.getElementById('send-code-btn');
+        btn.disabled = true;
+        btn.style.opacity = '0.45';
+        if (codeTimer) clearInterval(codeTimer);
+        codeTimer = setInterval(() => {
+            codeCooldown--;
+            btn.textContent = codeCooldown > 0 ? `${codeCooldown}s 后重发` : '发送验证码';
+            if (codeCooldown <= 0) {
+                clearInterval(codeTimer);
+                codeTimer = null;
+                btn.disabled = false;
+                btn.style.opacity = '1';
+            }
+        }, 1000);
+    }
+
+    /* ---- 提交登录/注册 ---- */
+    async function submitAuth() {
+        const username = document.getElementById('auth-username').value.trim();
+        const password = document.getElementById('auth-password').value;
+        const msgEl = document.getElementById('auth-msg');
+        msgEl.className = 'auth-msg'; msgEl.textContent = '';
+
+        if (!username || !password) { msgEl.className = 'auth-msg err'; msgEl.textContent = '请填写用户名和密码'; return; }
+        if (username.length < 2) { msgEl.className = 'auth-msg err'; msgEl.textContent = '用户名至少2个字符'; return; }
+
+        if (authMode === 'register') {
+            const email = document.getElementById('auth-email').value.trim();
+            const code = document.getElementById('auth-code').value.trim();
+            const pw2 = document.getElementById('auth-password2').value;
+
+            if (!email) { msgEl.className = 'auth-msg err'; msgEl.textContent = '请输入邮箱'; return; }
+            if (!code || code.length !== 6) { msgEl.className = 'auth-msg err'; msgEl.textContent = '请输入6位验证码'; return; }
+            if (password.length < 8) { msgEl.className = 'auth-msg err'; msgEl.textContent = '密码至少8位'; return; }
+            if (!/[a-zA-Z]/.test(password)) { msgEl.className = 'auth-msg err'; msgEl.textContent = '密码需包含字母'; return; }
+            if (!/\d/.test(password)) { msgEl.className = 'auth-msg err'; msgEl.textContent = '密码需包含数字'; return; }
+            if (!/[!@#$%^&*()_+\-=\[\]{};:'",./<>?\\|`~]/.test(password)) { msgEl.className = 'auth-msg err'; msgEl.textContent = '密码需包含特殊符号'; return; }
+            if (password !== pw2) { msgEl.className = 'auth-msg err'; msgEl.textContent = '两次密码不一致'; return; }
+
+            try {
+                const controller = new AbortController();
+                const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT + 2000);
+
+                const res = await fetch(`${API_BASE}/api/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, email, password, code }),
+                    signal: controller.signal
+                });
+                clearTimeout(timeout);
+                
+                const data = await res.json();
+                if (!res.ok) {
+                    msgEl.className = 'auth-msg err';
+                    msgEl.textContent = data.detail || '注册失败';
+                    return;
+                }
+                localStorage.setItem('gm_token', data.token);
+                localStorage.setItem('gm_username', data.username);
+                msgEl.className = 'auth-msg ok';
+                msgEl.textContent = '注册成功！';
+                setTimeout(() => { closeAuthModal(); showLoggedInUI(data.username); }, 600);
+            } catch (e) {
+                msgEl.className = 'auth-msg err';
+                let errorMsg = '无法连接服务器';
+                if (e.name === 'AbortError') errorMsg = '请求超时，请检查网络';
+                msgEl.textContent = errorMsg;
+            }
+        } else {
+            if (password.length < 6) { msgEl.className = 'auth-msg err'; msgEl.textContent = '密码至少6位'; return; }
+            try {
+                const controller = new AbortController();
+                const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT + 2000);
+
+                const res = await fetch(`${API_BASE}/api/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password }),
+                    signal: controller.signal
+                });
+                clearTimeout(timeout);
+                
+                const data = await res.json();
+                if (!res.ok) {
+                    msgEl.className = 'auth-msg err';
+                    msgEl.textContent = data.detail || '登录失败';
+                    return;
+                }
+                localStorage.setItem('gm_token', data.token);
+                localStorage.setItem('gm_username', data.username);
+                msgEl.className = 'auth-msg ok';
+                msgEl.textContent = '登录成功！';
+                setTimeout(() => { closeAuthModal(); showLoggedInUI(data.username); }, 600);
+            } catch (e) {
+                msgEl.className = 'auth-msg err';
+                let errorMsg = '无法连接服务器';
+                if (e.name === 'AbortError') errorMsg = '请求超时，请检查网络';
+                msgEl.textContent = errorMsg;
+            }
+        }
+    }
+
+    function showLoggedInUI(username) {
+        document.getElementById('auth-group').innerHTML =
+            `<div class="auth-user-info">
+                <span class="user-badge">${username}</span>
+                <button class="btn-ghost" onclick="logout()">退出</button>
+            </div>`;
+    }
+
+    function logout() {
+        localStorage.removeItem('gm_token');
+        localStorage.removeItem('gm_username');
+        document.getElementById('auth-group').innerHTML =
+            `<button class="btn-ghost" onclick="openAuthModal('register')">注册</button>
+             <button class="btn-solid" onclick="openAuthModal('login')">登录</button>`;
+    }
+
+    function restoreSession() {
+        const token = localStorage.getItem('gm_token');
+        const username = localStorage.getItem('gm_username');
+        if (token && username) {
+            fetch(`${API_BASE}/api/me`, { headers: { 'Authorization': `Bearer ${token}` } })
+                .then(r => { if (r.ok) showLoggedInUI(username); else logout(); })
+                .catch(() => {});
+        }
+    }
+
+    // 回车提交
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && document.getElementById('auth-overlay').classList.contains('show')) {
+            submitAuth();
+        }
+    });
+
+    // 初始化拼图滑块
+    initPuzzleSlider();
+</script>
+
+</body>
+</html>
