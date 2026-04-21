@@ -257,7 +257,7 @@ def startup():
 
 @app.get("/", summary="首页")
 def index():
-    return FileResponse(os.path.join(os.path.dirname(__file__), "golden_monkey14.html"))
+    return FileResponse(os.path.join(os.path.dirname(__file__), "golden_monkey.html"))
 
 # ───────── 发送验证码 ─────────
 @app.post("/api/send-code", summary="发送邮箱验证码")
